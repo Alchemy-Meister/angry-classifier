@@ -2,65 +2,111 @@
 # -*- coding: utf-8 -*-
 
 import arff
-import csv
+from datetime import datetime
+import numpy as np
+import pandas as pd
 import re
+import sys, getopt
 
-# Open CSV file and load its data.
-csv_file = open('./../datasets/crowdflower/text_emotion.csv', 'rb')
-csv_data = csv.reader(csv_file)
+dataset_path = './../datasets/crowdflower/'
+dataset_filename = 'text_emotion.csv'
+arff_folder = 'arff/'
+binary_tag = 'binary_'
+output_filename = 'crowdflower.arff'
 
-# Define and initialize arff data dictionary.
-data_dict = {'attributes': [], 'data': [], 'description': '', 'relation': ''}
-data_dict['relation'] = 'Twitter-Messages'
-data_dict['attributes'] = [('text', 'STRING'), ('@@class@@', ['anger', \
-	'boredom', 'enthusiasm', 'empty', 'fun', 'happiness', 'hate', 'love', \
-	'neutral', 'relief', 'sadness', 'surprise', 'worry'])]
+def main(argv):
+    # Flag to performe binary classification.
+    binary_classification = False
 
-header_row = True
+    # Define and initialize arff data dictionary.
+    data_dict = {'attributes': [], 'data': [], 'description': '', \
+        'relation': ''}
+    data_dict['relation'] = 'Twitter-Messages'
 
-for row in csv_data:
-	if header_row:
-		# Do noathing with the header.
-		header_row = False
-	else:
-		try:
-			# Twitter preprocessing: replacing URLs and Mentions
-			twitter_url_str = (ur'http[s]?://(?:[a-zA-Z]|[0-9]|[$+*%/@.&+]' \
-				ur'|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
+    # Checks if parameter is being used.
+    try:
+        opts, args = getopt.getopt(argv,'b',['binary_classification'])
+    except getopt.GetoptError:
+        print 'ERROR: Unknown parameter. Usage: crowdflower2arff.py [-b]'
+        sys.exit(2)
 
-			twitter_mention_regex = re.compile(ur'(\s+|^|.)@\S+')
-			twitter_url_regex = re.compile(twitter_url_str)
+    for o, a in opts:
+        if o == '-b' or o == '--binary_classification':
+            binary_classification = True
 
-			# Clean text of new lines.
-			preprocessed_tweet = row[3].replace('\n', ' ');
+    # Loads CSV into dataframe.
+    df = pd.read_csv(dataset_path + dataset_filename, usecols=[1,3], header=0)
 
-			# Remove urls and mentions with representative key code.
-			preprocessed_tweet = re.sub(twitter_mention_regex, ' AT_USER', \
-				preprocessed_tweet)
-			preprocessed_tweet = re.sub(twitter_url_regex, 'URL', \
-				preprocessed_tweet)
+    # Loads dictionary classes depending on if binary classification flag is
+    # enabled.
+    if binary_classification:
+        data_dict['attributes'] = [('text', 'STRING'), ('@@class@@', ['anger', \
+            'no_anger'])]
 
-			# Trims generated string.
-			preprocessed_tweet = preprocessed_tweet.strip()
+        # Creates a binary sub-samples of the original dataframe
+        anger_tweets = df[ (df.sentiment == 'anger') \
+            | (df.sentiment == 'hate') ].copy()
+        no_anger_tweets = df[ (df.sentiment != 'anger') \
+            | (df.sentiment != 'hate')].copy()
 
-			# Escape \ character.
-			preprocessed_tweet = preprocessed_tweet.replace('\\', '\\\\')
+        # Replace sentiment labels for binary classification
+        anger_tweets['sentiment'] = 'anger'
+        no_anger_tweets['sentiment'] = 'no_anger'
 
-			# Load arff dictionary data with dataset data.
-			data_dict['data'].append([preprocessed_tweet.encode('utf8'), \
-				row[1]])
+        # Select a random subset of len(anger_tweets) without replacement.
+        no_anger_tweets = no_anger_tweets.take( \
+            np.random.permutation(len(no_anger_tweets))[:len(anger_tweets)] )
 
-		except:
-			pass
+        # Merge both dataframes.
+        anger_tweets = anger_tweets.append(no_anger_tweets, ignore_index=True)
 
-try:
-	# Generate arff format string.
-	arff_data = arff.dumps(data_dict)
-	
-	# Write arff string into file.
-	arff_output = open('./../datasets/crowdflower/crowdflower.arff', 'w+')
-	arff_output.write(arff_data)
-	arff_output.close()
+        # Shuffle
+        df = anger_tweets.sample(frac=1).reset_index(drop=True)
 
-except:
-	pass
+    else:
+        data_dict['attributes'] = [('text', 'STRING'), ('@@class@@', ['anger', \
+            'boredom', 'enthusiasm', 'empty', 'fun', 'happiness', 'hate', \
+            'love', 'neutral', 'relief', 'sadness', 'surprise', 'worry'])]
+
+    for tweet in df.itertuples():
+        # Twitter preprocessing: replacing URLs and Mentions
+        twitter_url_str = (ur'http[s]?://(?:[a-zA-Z]|[0-9]|' \
+            ur'[$+*%/@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
+
+        twitter_mention_regex = re.compile(ur'(\s+|^|.)@\S+')
+        twitter_url_regex = re.compile(twitter_url_str)
+
+        # Clean text of new lines.
+        preprocessed_tweet = tweet[2].replace('\n', ' ');
+
+        # Remove urls and mentions with representative key code.
+        preprocessed_tweet = re.sub(twitter_mention_regex, ' AT_USER', \
+            preprocessed_tweet)
+        preprocessed_tweet = re.sub(twitter_url_regex, 'URL', \
+            preprocessed_tweet)
+
+        # Trims generated string.
+        preprocessed_tweet = preprocessed_tweet.strip()
+
+        # Escape \ character.
+        preprocessed_tweet = preprocessed_tweet.replace('\\', '\\\\')
+
+        data_dict['data'].append([preprocessed_tweet, tweet[1]])
+
+
+    # Generate arff format string.
+    arff_data = arff.dumps(data_dict)
+
+    # Write arff string into file.
+    if binary_classification:
+        arff_output = open(dataset_path + arff_folder + binary_tag \
+            + output_filename, 'w+')
+    else:
+        arff_output = open(dataset_path + arff_folder + output_filename, 'w+')
+    arff_output.write(arff_data)
+    arff_output.close()
+
+if __name__ == "__main__":
+    start_time = datetime.now()
+    main(sys.argv[1:])
+    print "Elapsed time: " + str(datetime.now() - start_time)
