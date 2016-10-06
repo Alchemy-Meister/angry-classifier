@@ -3,6 +3,7 @@
 
 import arff
 from datetime import datetime
+import HTMLParser
 import numpy as np
 import pandas as pd
 import re
@@ -78,6 +79,10 @@ def main(argv):
 
         # Clean text of new lines.
         preprocessed_tweet = tweet[2].replace('\n', ' ');
+
+        # Unscape possible HTML entities.
+        preprocessed_tweet = HTMLParser.HTMLParser() \
+            .unescape(preprocessed_tweet)
 
         # Remove urls and mentions with representative key code.
         preprocessed_tweet = re.sub(twitter_mention_regex, ' AT_USER', \
