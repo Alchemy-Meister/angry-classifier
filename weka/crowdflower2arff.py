@@ -7,6 +7,7 @@ import HTMLParser
 import numpy as np
 import pandas as pd
 import re
+import string
 import sys, getopt
 
 dataset_path = './../datasets/crowdflower/'
@@ -74,7 +75,8 @@ def main(argv):
         twitter_url_str = (ur'http[s]?://(?:[a-zA-Z]|[0-9]|' \
             ur'[$+*%/@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
 
-        twitter_mention_regex = re.compile(ur'(\s+|^|.)@\S+')
+        twitter_mention_regex = re.compile(ur'(\s+|^|\.)@\S+')
+        twitter_hashtag_regex = re.compile(ur'(\s+|^|\.)#\S+')
         twitter_url_regex = re.compile(twitter_url_str)
 
         # Clean text of new lines.
@@ -85,10 +87,15 @@ def main(argv):
             .unescape(preprocessed_tweet)
 
         # Remove urls and mentions with representative key code.
-        preprocessed_tweet = re.sub(twitter_mention_regex, ' AT_USER', \
-            preprocessed_tweet)
         preprocessed_tweet = re.sub(twitter_url_regex, 'URL', \
             preprocessed_tweet)
+        preprocessed_tweet = re.sub(twitter_mention_regex, ' MENTION', \
+            preprocessed_tweet)
+
+        # Removes punctiation including hashtags.
+        preprocessed_tweet =  preprocessed_tweet.encode('utf-8') \
+            .translate(None, string.punctuation)
+        preprocessed_tweet.decode('utf-8')
 
         # Trims generated string.
         preprocessed_tweet = preprocessed_tweet.strip()
