@@ -13,10 +13,37 @@
 
 \begin{document}
 
-  \begin{titlepage} 
-    \newgeometry{left=0cm,right=0cm,bottom=0cm,top=0cm}
-    \includegraphics[scale=0.999]{figures/frontpage}
-    \restoregeometry
+  \pagenumbering{gobble}
+  %
+  % First frontpage.
+  \begin{titlepage}
+      \newgeometry{left=0cm,right=0cm,bottom=0cm,top=0cm}
+      \begin{center}
+        \includegraphics[width=0.99\textwidth,height=0.99\textheight,keepaspectratio]{figures/frontpage}
+      \end{center}
+      \restoregeometry
+
+      \null\newpage
+
+      \newgeometry{left=0cm,right=0cm,bottom=0cm,top=0cm}
+      \begin{center}
+        \includegraphics[width=0.99\textwidth,height=0.99\textheight,keepaspectratio]{figures/project-info}
+      \end{center}
+      \restoregeometry
+
+      \null\newpage
+
+      \newgeometry{left=0cm,right=0cm,bottom=0cm,top=0cm}
+      \begin{center}
+        \includegraphics[width=0.99\textwidth,height=0.99\textheight,keepaspectratio]{figures/frontpage}
+      \end{center}
+      \restoregeometry
   \end{titlepage}
+
+  \cleardoublepage\tableofcontents
+  \cleardoublepage\listoffigures
+  \cleardoublepage\listoftables
+
+  \pagenumbering{arabic}
 
 \end{document}
