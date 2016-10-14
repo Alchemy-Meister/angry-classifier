@@ -7,6 +7,28 @@
 
 Classification, which is the task of assigning objects to one of several predefined categories, is a pervasive problem that encompasses many diverse applications \cite{pang2006introduction}.
 
+\begin{figure}[!htp]
+  \center
+  \includegraphics[width=\textwidth]{figures/classification}
+  \caption{Classification as a task of mapping a set attributes $x$ into its fitting class label $y$.}
+  \label{fig:classification_task}
+\end{figure}
+
+\FloatBarrier
+
+The input data for a classification task is a collection of records. Each record, also known as an instance or example, is characterized by a tuple (x, y), where x is the attribute set and y is a special attribute, designated as the class label (also known as category or target attribute). Table 4.1 shows a sample data set used for classifying vertebrates into one of the following categories: mammal, bird, fish, reptile, or amphibian. The attribute set includes properties of a vertebrate such as its body temperature, skin cover, method of reproduction, ability to fly, and ability to live in water. Although the attributes presented in Table 4.1 are mostly discrete, the attribute set can also contain continuous features. The class label, on the other hand, must be a discrete attribute. This is a key characteristic that distinguishes classification from regression, a predictive modeling task in which y is a continuous attribute. Regression techniques are covered in Appendix D.
+
+Definition (Classification). Classification is the task of learning a target function f that maps each attribute set x to one of the predefined class labels y.
+
+The target function is also known informally as a classification model.
+
+A classification model is useful for the following purposes.
+Descriptive Modeling A classification model can serve as an explanatory tool to distinguish between objects of different classes.
+
+Predictive Modeling A classification model can also be used to predict the class label of unknown records. As shown in Figure \ref{fig:classification_task}, a classification model can be treated as a black box that automatically assigns a class label when presented with the attribute set of an unknown record.
+
+Classification techniques are most suited for predicting or describing data sets with binary or nominal categories. They are less effective for ordinal categories, because they do not consider the implicit order among the categories. Other forms of relationships, such as the subclass–superclass relationships among categories.
+
 \section{Support Vector Machine}
 
 There are four main advantages: Firstly it has a regularisation parameter, which makes the user think about avoiding over-fitting. Secondly it uses the kernel trick, so you can build in expert knowledge about the problem via engineering the kernel. Thirdly an SVM is defined by a convex optimisation problem (no local minima) for which there are efficient methods (e.g. SMO). Lastly, it is an approximation to a bound on the test error rate, and there is a substantial body of theory behind it which suggests it should be a good idea.
