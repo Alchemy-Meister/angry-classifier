@@ -3,26 +3,52 @@
 \chapter{Algorithms}
 \label{ch:algorithms}
 
-% This will move all footnotes to the end of the chapter. Comment out if you 
-% prefer to have footnotes on each page.
-\makeendnotes
+\section{Fundamentals of Classification}
 
-%%%% Contents of chapter go here %%%%
+Classification, which is the task of assigning objects to one of several predefined categories, is a pervasive problem that encompasses many diverse applications \cite{pang2006introduction}.
 
-\subchapter{Support Vector Machine}
+\section{Support Vector Machine}
 
-%%%%% Endnotes %%%%%
-% The following goes at the END of the file.
-%
-% Comment out (or delete) all the lines below if you are not using endnotes
-% style, or if this chapter has no footnotes at all.
-%
-\section*{Notes}
-\addcontentsline{toc}{section}{Notes}
-\begin{footnotesize}
-% Note: The following line will cause an error in LaTeX if you don't have any
-%       footnotes in this chapter yet. You can get around this by commenting it
-%       out until you add your first footnote.
-\theendnotes
-\end{footnotesize}
-%%%%%%%%%%%%%%%%%%%
+There are four main advantages: Firstly it has a regularisation parameter, which makes the user think about avoiding over-fitting. Secondly it uses the kernel trick, so you can build in expert knowledge about the problem via engineering the kernel. Thirdly an SVM is defined by a convex optimisation problem (no local minima) for which there are efficient methods (e.g. SMO). Lastly, it is an approximation to a bound on the test error rate, and there is a substantial body of theory behind it which suggests it should be a good idea.
+The disadvantages are that the theory only really covers the determination of the parameters for a given value of the regularisation and kernel parameters and choice of kernel. In a way the SVM moves the problem of over-fitting from optimising the parameters to model selection. Sadly kernel models can be quite sensitive to over-fitting the model selection criterion \cite{cawley2010over}
+
+--------------------
+
+SVMs are a new promising non-linear, non-parametric classification tech- nique, which already showed good results in the medical diagnostics, optical character recognition, elec- tric load forecasting and other fields.
+
+Suitable for binary classification tasks.
+
+The advantages of the SVM technique can be summarised as follows \cite{auria2008support}:
+
+\begin{enumerate}
+\item By introducing the kernel, SVMs gain flexibility in the choice of the form of the threshold separating solvent from insolvent companies, which needs not be linear and even needs not have the same func- tional form for all data, since its function is non-parametric and operates locally. As a consequence they can work with financial ratios, which show a non-monotone relation to the score and to the probability of default, or which are non-linearly dependent, and this without needing any specific work on each non-monotone variable.
+\item Since the kernel implicitly contains a non-linear transformation, no assumptions about the functional form of the transformation, which makes data linearly separable, is necessary. The transformation oc- curs implicitly on a robust theoretical basis and human expertise judgement beforehand is not needed.
+\item SVMs provide a good out-of-sample generalization, if the parameters C and r (in the case of a Gaussian kernel) are appropriately chosen. This means that, by choosing an appropriate generalization grade, SVMs can be robust, even when the training sample has some bias
+\item SVMs deliver a unique solution, since the optimality problem is convex. This is an advantage compared to Neural Networks, which have multiple solutions associated with local minima and for this reason may not be robust over different samples.
+\item With the choice of an appropriate kernel, such as the Gaussian kernel, one can put more stress on the similarity between companies, because the more similar the financial structure of two companies is, the higher is the value of the kernel. Thus when classifying a new company, the values of its financial ratios are compared with the ones of the support vectors of the training sample which are more similar to this new company. This company is then classified according to with which group it has the greatest similarity.
+\end{enumerate}
+
+--------------------------
+
+Furthermore, $K(\bm{x}i, \bm{x}j ) \equiv \phi(\bm{x}_i)^T \phi(\bm{x}_j)$ is called the kernel function.
+
+four basic kernels \cite{hsu2003practical}:
+
+\begin{itemize}
+\item \textbf{Linear:} $K(\bm{x}_i,\bm{x}_j) = \bm{x}^T_i \bm{x}_j$.
+\item \textbf{Polynomial:} $K(\bm{x}_i,\bm{x}_j) = (\gamma \bm{x}^T_i \bm{x}_j + r)^d, \gamma > 0$.
+\item \textbf{Radial Basis Function (RBF):} $K(\bm{x}_i,\bm{x}_j) = \exp(−\gamma \lVert \bm{x}_i − \bm{x}_j \rVert ^2),\gamma > 0$.
+\item \textbf{Sigmoid:} $K(\bm{x}_i,\bm{x}_j) = \tanh(\gamma \bm{x}^T_i\bm{x}_j + r)$.
+\end{itemize}
+
+Here, $\gamma$, $r$, and $d$ are kernel parameters.
+
+--------------------------
+
+Support vector machines (SVM) were originally designed for binary classification \cite{hsu2002comparison}.
+
+solving multi-class SVM in one step: “all-together” methods: [25], [27] and [7]. We then compare their performance with three methods based on binary classifications: “one-against-all,” “one-against-one,” and DAGSVM [23]. Our experiments indicate that the “one-against-one” and DAG methods are more suitable for practical use than the other methods. 
+
+\section{K-Nearest Neighbor}
+
+\section{Neural Networks}

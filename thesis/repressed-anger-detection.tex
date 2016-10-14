@@ -10,6 +10,7 @@
 % Japanese monospaced font - e.g. MS Gothic
 \setCJKmonofont{MS PGothic}
 
+\bibliography{bibliography}
 
 \begin{document}
 
@@ -23,15 +24,11 @@
       \end{center}
       \restoregeometry
 
-      \null\newpage
-
       \newgeometry{left=0cm,right=0cm,bottom=0cm,top=0cm}
       \begin{center}
         \includegraphics[width=0.99\textwidth,height=0.99\textheight,keepaspectratio]{figures/project-info}
       \end{center}
       \restoregeometry
-
-      \null\newpage
 
       \newgeometry{left=0cm,right=0cm,bottom=0cm,top=0cm}
       \begin{center}
@@ -40,10 +37,22 @@
       \restoregeometry
   \end{titlepage}
 
-  \cleardoublepage\tableofcontents
-  \cleardoublepage\listoffigures
-  \cleardoublepage\listoftables
+  \tableofcontents
+  \listoffigures
+  \listoftables
+
+  \null\newpage
 
   \pagenumbering{arabic}
+
+  \input{content/1-Algorithms}
+
+  \clearpage
+
+  \begingroup
+  \raggedright
+  \sloppy
+    \printbibliography[heading=bibintoc]
+  \endgroup
 
 \end{document}
