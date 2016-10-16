@@ -32,3 +32,6 @@
   plainpages=false,
   pdfborder={0 0 0},
 }
+
+% Used to introduce acronyms into the table of context.
+\RequirePackage[toc, acronym, nomain]{glossaries}

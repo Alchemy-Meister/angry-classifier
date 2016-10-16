@@ -10,7 +10,10 @@
 % Japanese monospaced font - e.g. MS Gothic
 \setCJKmonofont{MS PGothic}
 
+\input{content/annex-acronyms}
+
 \bibliography{bibliography}
+\makeglossaries
 
 \begin{document}
 
@@ -54,5 +57,7 @@
   \sloppy
     \printbibliography[heading=bibintoc]
   \endgroup
+
+  \printglossary[type=\acronymtype, title=Acronyms, toctitle= Acronyms]
 
 \end{document}
