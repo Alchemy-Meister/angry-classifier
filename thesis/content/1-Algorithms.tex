@@ -18,15 +18,34 @@ According to \cite{voznika2007data}, classification can be defined as the task o
 
 \FloatBarrier
 
-The input data for a classification task is composed by a collection of records, the dataset. In the same time, each record, also known as an instance, is composed by a set attributes. From all these attributes there is one considered special, which is called the target attribute or the class label. The attribute set includes properties of a vertebrate such as its body temperature, skin cover, method of reproduction, ability to fly, and ability to live in water. Although the attributes presented in Table 4.1 are mostly discrete, the attribute set can also contain continuous features. The class label, on the other hand, must be a discrete attribute. This is a key characteristic that distinguishes classification from regression, a predictive modeling task in which y is a continuous attribute. Regression techniques are covered in Appendix D.
-Table 4.1 shows a sample data set used for classifying vertebrates into one of the following categories: mammal, bird, fish, reptile, or amphibian.
+The input data for a classification task is composed by a collection of records, the dataset. In the same time, each record, also known as an instance, is composed by a set attributes. From all these attributes there is one considered special, which is called the target attribute or the class label. Regular attributes can be both discrete or continuous values. For the values signed for the class label, however, they must be discrete. This characteristic is what distinguishes classification form regression. Table \ref{tab:clasiffication_table} a sample dataset for animal classification into the following categories: amphibian, bird, fish or mammal.
 
-\begin{figure}[!htp]
-  \center
-  \includegraphics[width=\textwidth]{figures/classification}
-  \caption{Classification as a task of mapping a set attributes $x$ into its fitting class label $y$.}
-  \label{fig:classification_task}
-\end{figure}
+\begin{table}[!htp]
+\centering
+\begin{tabular}{ |c|c|c|c|c|c|c|c| }
+\hline
+Common Name & Hair & Feathers & Eggs & Milk & Aquatic & Legs & Class Label \\ \hline
+antelope & Yes & No & No & No & No & 4 & mammal \\ \hline
+catfish & No & No & Yes & No & Yes & 0 & fish \\ \hline
+dolphin & No & No & No & Yes & Yes & 0 & mammal \\ \hline
+dove & No & Yes & Yes & No & No & 2 & bird \\ \hline
+duck & No & Yes & Yes & No & Yes & 2 & bird \\ \hline
+elephant & Yes & Yes & No & Yes & No & 4 & mammal \\ \hline
+flamingo & Yes & Yes & Yes & No & No & 2 & bird \\ \hline
+frog & No & No & Yes & No & Yes & 4 & amphibian \\ \hline
+fruit bat & Yes & No & No & Yes & No & 2 & mammal \\ \hline
+gull & No & Yes & Yes & No & Yes & 2 & bird \\ \hline
+herring & No & No & Yes & No & Yes & 0 & fish \\ \hline
+kiwi & No & No & Yes & No & No & 2 & bird \\ \hline
+lark & No & Yes & Yes & No & No & 2 & bird \\ \hline
+lynx & Yes & No & No & Yes & No & 4 & mammal \\ \hline
+mole & Yes & No & No & Yes & No & 4 & mammal \\ \hline
+mongoose & Yes & No & No & Yes & No & 4 & mammal \\ \hline
+newt & No & No & Yes & No & Yes & 4 & amphibian \\ \hline
+\end{tabular}
+\label{tab:clasiffication_table}
+\caption{Animal kingdom dataset.}
+\end{table}
 
 Definition (Classification). Classification is the task of learning a target function f that maps each attribute set x to one of the predefined class labels y.
 
@@ -39,6 +58,15 @@ A classification model is useful for the following purposes:
 
 \item \textbf{Predictive Modeling:} A classification model can also be used to predict the class label of unknown records. As shown in Figure \ref{fig:classification_task}, a classification model can be treated as a black box that automatically assigns a class label when presented with the attribute set of an unknown record.
 \end{itemize}
+
+\begin{figure}[!htp]
+  \center
+  \includegraphics[width=0.7\textwidth]{figures/classification}
+  \caption{Classification as a task of mapping a set attributes $x$ into its fitting class label $y$.}
+  \label{fig:classification_task}
+\end{figure}
+
+\FloatBarrier
 
 Classification techniques are most suited for predicting or describing data sets with binary or nominal categories. They are less effective for ordinal categories, because they do not consider the implicit order among the categories. Other forms of relationships, such as the subclass–superclass relationships among categories.
 
