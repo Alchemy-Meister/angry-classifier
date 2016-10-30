@@ -35,3 +35,7 @@
 
 % Used to introduce acronyms into the table of context.
 \RequirePackage[toc, acronym, nomain]{glossaries}
+
+% Used to combine columns and rows on tables.
+\RequirePackage{multirow}
+\RequirePackage{hhline}

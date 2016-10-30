@@ -1,4 +1,4 @@
-% !TeX root = supressed-anger.tex
+% !TeX root = repressed-anger.tex
 
 \chapter{Classification Techniques}
 \label{ch:algorithms}
@@ -41,13 +41,14 @@ lark & No & Yes & Yes & No & No & 2 & bird \\ \hline
 lynx & Yes & No & No & Yes & No & 4 & mammal \\ \hline
 mole & Yes & No & No & Yes & No & 4 & mammal \\ \hline
 mongoose & Yes & No & No & Yes & No & 4 & mammal \\ \hline
-newt & No & No & Yes & No & Yes & 4 & amphibian \\ \hline
+newt & No & No & Yes & No & Yes & 4 & amphibian \\
+\hline
 \end{tabular}
 \label{tab:clasiffication_table}
 \caption{Animal kingdom dataset.}
 \end{table}
 
-A more mathematical definition of classification states that classification is the process of learning a target function $f$, also known as classification model, that maps each attribute set $x$ to one of the predefined class labels $y$.
+Tan Pang-Ning et al. propose a more mathematical definition of classification stating that it is the process of learning a target function $f$, also known as classification model, that maps each attribute set $x$ to one of the predefined class labels $y$.
 
 \begin{figure}[!htp]
   \center
@@ -56,7 +57,7 @@ A more mathematical definition of classification states that classification is t
   \label{fig:classification_task}
 \end{figure}
 
-A classification model is useful for the following purposes:
+A classification model is useful for the following purposes \cite{pang2006introduction}:
 
 \begin{itemize}
 \item \textbf{Descriptive Modeling:} Since a classification model presents the main features of the data, it can serve as an explanatory tool to distinguish between instances of different categories \cite{madigan2002descriptive}.
@@ -68,7 +69,7 @@ It is important to remark that classification techniques perform their best when
 
 \section{General classification problem solving}
 
-For general classification problems solving, popular techniques consists on a process that starts with building classification models from a sample dataset. Each technique depends on a learning algorithm witch is in charge of generating the classification model. A good model should define the relationship between the input attribute set and its belonging category that suits the best. Therefore the model should be valid for both, the sample data used to generate the model and also for new unknown instances. Among popular classification techniques \acrfull{svm}, \acrfullpl{nn}, Naive Bayes or \acrfullpl{dt} can be found \cite{garje2016sentiment}.
+For general classification problems solving, popular techniques consists on a process that starts with building classification models from a sample dataset \cite{witten2005data}. Each technique depends on a learning algorithm witch is in charge of generating the classification model. A good model should define the relationship between the input attribute set and its belonging category that suits the best. Therefore the model should be valid for both, the sample data used to generate the model and also for new unknown instances. Among popular classification techniques \acrfull{svm}, \acrfullpl{nn}, Naive Bayes or \acrfullpl{dt} can be found \cite{garje2016sentiment}.
 
 \begin{figure}[!htp]
   \center
@@ -77,9 +78,31 @@ For general classification problems solving, popular techniques consists on a pr
   \label{fig:classification_problem}
 \end{figure}
 
+As shown in the Figure \ref{fig:classification_problem}, to solve a classification problem a sample dataset must be provided as a training set. This sample is used to build the classification model according to the learning algorithm. After the model is built, it is applied to unlabeled dataset, also called the test set, to predict the categories of each instances of the records. To measure how good the model is, there is only need to count the number of instances have been correctly and incorrectly classified from the test set. Usually, to represent system's performance values, a confusion matrix is used \cite{hamilton2000confusion}. 
+
+
+\begin{table}[!htp]
+\centering
+\begin{tabular}{ |c|c|c|c| }
+\hline
+\multicolumn{2}{|c|}{} & \multicolumn{2}{c|}{Predicted Class} \\
+\hhline{~~--}
+\multicolumn{2}{|c|}{} & $Class = Yes$ & $Class = No$ \\ \hline
+\multirow{2}{*}{Actual Class} & $Class = Yes$ & a & b \\
+\hhline{~---}
+& $Class = No$ & c & d \\
+\hline
+\end{tabular}
+\label{tab:confusion_matrix}
+\caption{Confusion matrix of a binary classification.}
+\end{table}
+
+As a example, Table \ref{tab:confusion_matrix} represents the confusion matrix of a binary classification problem. 
+\iffalse
+There are two possible classes for an instance to be assigned, $Yes$ and $No$
+
 [STARTS COPY PASTE]
 
-Figure \ref{fig:classification_problem} shows a general approach for solving classification problems. First, a training set consisting of records whose class labels are known must be provided. The training set is used to build a classification model, which is subsequently applied to the test set, which consists of records with unknown class labels.
 Evaluation of the performance of a classification model is based on the counts of test records correctly and incorrectly predicted by the model. These counts are tabulated in a table known as a confusion matrix. Table 4.2 depicts the confusion matrix for a binary classification problem. Each entry fij in this table denotes the number of records from class i predicted to be of class j. For instance, f01 is the number of records from class 0 incorrectly predicted as class 1. Based on the entries in the confusion matrix, the total number of correct predictions made by the model is (f11 + f00) and the total number of incorrect predictions is (f10 + f01).
 Although a confusion matrix provides the information needed to determine how well a classification model performs, summarizing this information with a single number would make it more convenient to compare the performance of different models. This can be done using a performance metric such as accuracy, which is defined as follows:
 
@@ -90,8 +113,6 @@ Equivalently, the performance of a model can be expressed in terms of its error 
 Error rate = Number of wrong predictions = f10 + f01 . (4.2) Total number of predictions f11 + f10 + f01 + f00
 
 Most classification algorithms seek models that attain the highest accuracy, or equivalently, the lowest error rate when applied to the test set. We will revisit the topic of model evaluation in Section 4.5.
-
-
 
 \section{Support Vector Machine}
 
@@ -145,6 +166,8 @@ asdasdasd \cite{berwick2003idiot}
   \caption{hyperplane}
   \label{fig:hyperplane}
 \end{figure}
+
+\fi
 
 \section{K-Nearest Neighbor}
 
