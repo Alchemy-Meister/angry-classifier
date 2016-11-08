@@ -2,6 +2,7 @@
 
 *.bin
 datasets/crowdflower/json/*.json
+datasets/Wang/json/*.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
