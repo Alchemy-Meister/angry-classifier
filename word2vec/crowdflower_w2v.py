@@ -9,6 +9,7 @@ import HTMLParser
 import logging
 from math import ceil
 from nltk.corpus import stopwords
+from nltk.tokenize import RegexpTokenizer
 import numpy as np
 import pandas as pd
 import re
@@ -26,6 +27,41 @@ DATASET_PATH = './../datasets/crowdflower/'
 DATASET_FILENAME = 'text_emotion.csv'
 OUTPUT_PATH = 'json/crowdflower'
 DISTRIBUTION = '_distribution'
+
+NUM_MODEL_FEATURES = 300
+
+def process_sample(model, sample, list_index, max_word_per_sentence):
+    num_words = len(sample[list_index]['words'])
+
+    for index in xrange(max_word_per_sentence):
+
+        if index < num_words:
+
+            word = sample[list_index]['words'][index]
+
+            try:
+                sample[list_index]['word2vec'].append( \
+                    model[word].tolist())
+            except KeyError:
+                # TODO Check the spelling in a dictionary.
+                sample[list_index]['word2vec'].append( \
+                    np.zeros(NUM_MODEL_FEATURES).tolist())
+        else:
+            # Adds zero array padding until filling max_word_per_sentence.
+            sample[list_index]['word2vec'].append( \
+                np.zeros(NUM_MODEL_FEATURES).tolist())
+
+    # Remove word list from the dict
+    sample[list_index].pop('words', None)
+
+def serialize_sample(sample_output_path, sample, indent):
+     with codecs.open(sample_output_path, 'w', \
+        encoding='utf-8') as file:
+
+        if indent:
+            file.write(ujson.dumps(sample, indent=4))
+        else:
+            file.write(ujson.dumps(sample))
 
 def main(argv):
 
@@ -48,7 +84,7 @@ def main(argv):
             indent = True
 
     # Loads NLTK's stopwords for English.
-    stop_words = stopwords.words("english")
+    stop_words = set(stopwords.words("english"))
 
     # Loads Word2Vec model.
     # Load Google's pre-trained Word2Vec model.
@@ -64,6 +100,7 @@ def main(argv):
     output = []
     test_output = []
     distribution = {}
+    distribution['classes'] = {}
 
     df_length = len(df.index)
     train_length = ceil(df_length * 0.7)
@@ -97,22 +134,29 @@ def main(argv):
         preprocessed_tweet = re.sub(twitter_mention_regex, ' MENTION', \
             preprocessed_tweet)
 
-        # Removes punctuation including hashtags.
-        preprocessed_tweet =  preprocessed_tweet.encode('utf-8') \
-            .translate(None, string.punctuation)
-        preprocessed_tweet.decode('utf-8')
+        # Lowercase tweet text.
+        preprocessed_tweet = preprocessed_tweet.lower()
 
+        # Removes all punctuation, contraction included.
+        # preprocessed_tweet =  preprocessed_tweet.encode('utf-8') \
+        #     .translate(None, string.punctuation)
+        # preprocessed_tweet.decode('utf-8')
+        #
         # Trims generated string.
-        preprocessed_tweet = preprocessed_tweet.strip()
+        # tweet_words = preprocessed_tweet.strip()
 
-        # Escape \ character.
-        # preprocessed_tweet = preprocessed_tweet.replace('\\', '\\\\')
+        # Removes punctuation, except contractions.
+        # tweet_words = [word.strip(string.punctuation) \
+        #    for word in preprocessed_tweet.split()]
 
-        # Generates a list of words
-        tweet_words = preprocessed_tweet.split()
+        # Removes punctuation, contraction includes and separate them.
+        tokenizer = RegexpTokenizer(r'\w+')
+        tweet_words = tokenizer.tokenize(preprocessed_tweet)
 
         # Removes stopwords.
-        tweet_words = [word for word in tweet_words if word not in stop_words]
+        tweet_words = [word for word in tweet_words \
+            if word and word not in stop_words]
+
         word_count = len(tweet_words)
 
         if divide and preprocess_index >= train_length:
@@ -127,40 +171,26 @@ def main(argv):
             max_word_per_sentence = word_count
 
         # Calculates dataset class distribution.
-        if label in distribution:
-            distribution[label] += 1
+        if label in distribution['classes']:
+            distribution['classes'][label] += 1
         else:
-            distribution[label] = 1
+            distribution['classes'][label] = 1
 
         # Update index.
         preprocess_index += 1
 
-    for index in trange(len(output), desc=task_description, \
+    distribution['max_phrase_length'] = max_word_per_sentence
+    distribution['model_feature_length'] = NUM_MODEL_FEATURES
+
+    for train_index in trange(len(output), desc=task_description, \
             total=len(output)):
-        
-        for word in output[index]['words']:
-            try:
-                output[index]['word2vec'].append(model[word].tolist())
-            except KeyError:
-                # TODO Check the spelling in a dictionary.
-                output[index]['word2vec'].append(np.zeros(300).tolist())
 
-        # Remove word list from the dict
-        output[index].pop('words', None)
+        process_sample(model, output, train_index, max_word_per_sentence)
 
-    for index in trange(len(test_output), \
+    for test_index in trange(len(test_output), \
         desc='Calculating Word2Vec test values', total=len(test_output)):
 
-        for word in test_output[index]['words']:
-            try:
-                test_output[index]['word2vec'].append(model[word].tolist())
-            except KeyError:
-                # TODO Check the spelling in a dictionary.
-                test_output[index]['word2vec'].append(np.zeros(300).tolist())
-
-        # Remove word list from the dict
-        test_output[index].pop('words', None)
-
+        process_sample(model, test_output, test_index, max_word_per_sentence)
 
     serialization_start_time = datetime.now()
 
@@ -168,29 +198,19 @@ def main(argv):
         logger.info('Serializing JSON into train and test files.')
 
         # Write train data to a JSON file.
-        with codecs.open(DATASET_PATH + OUTPUT_PATH + '_train.json', 'w', \
-            encoding='utf-8') as train_file:
-
-            if indent:
-                train_file.write(ujson.dumps(output, indent=4))
-            else:
-                train_file.write(ujson.dumps(output))
+        serialize_sample(DATASET_PATH + OUTPUT_PATH + '_test.json', output, \
+            indent)
 
         # Write test data to a JSON file.
-        with codecs.open(DATASET_PATH + OUTPUT_PATH + '_test.json', 'w', \
-            encoding='utf-8') as test_file:
-
-            if indent:
-                test_file.write(ujson.dumps(test_output, indent=4))
-            else:
-                test_file.write(ujson.dumps(test_output))
+        serialize_sample(DATASET_PATH + OUTPUT_PATH + '_test.json', \
+            test_output, indent)
     else:
 
         logger.info('Serializing JSON into a file.')
 
         # Write data to a JSON file.
-        ujson.dump(output, codecs.open(DATASET_PATH + OUTPUT_PATH \
-            + '.json', 'w', encoding='utf-8'))
+        serialize_sample(DATASET_PATH + OUTPUT_PATH + DISTRIBUTION + '.json', \
+            output, indent)
 
     with codecs.open(DATASET_PATH + OUTPUT_PATH + DISTRIBUTION + '.json', 'w', \
             encoding='utf-8') as dout:

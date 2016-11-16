@@ -12,7 +12,7 @@ from level_filter import LevelFilter
 import ujson
 
 DATASET_PATH = './../datasets/'
-JSON_PATH = 'json/'
+JSON_PATH = '/json/'
 FILE_PATH = ''
 OUTPUT_FILENAME = ''
 
@@ -65,6 +65,8 @@ def main(argv):
     FILE_PATH = str(argv[0]).strip()
     OUTPUT_FILENAME = FILE_PATH.split('.')[0]
 
+    split_path = OUTPUT_FILENAME.split('/')
+
     # OAuth authentication
     auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
     auth.set_access_token(ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
@@ -74,13 +76,17 @@ def main(argv):
 
     tweets = []
 
-    df = pd.read_csv(DATASET_PATH + FILE_PATH,sep='\t', header=None)
+    df = pd.read_csv(DATASET_PATH + FILE_PATH,sep='\t', header=None, \
+        dtype={'tweet_id': int})
     
     # Add two more columns to the dataframe.
-    df['2'] = ''
-    df['3'] = ''
+    df[2] = ''
+    df[3] = ''
 
     df_length = len(df.index)
+
+    # save tweet_id as integer instead of float.
+    df[0] = df[0].astype(int)
 
     index = 0
     for row in tqdm(df.itertuples(), desc='Downloading Tweets', \
@@ -90,8 +96,8 @@ def main(argv):
             tweet = api.get_status(row._1)
             
             # Add author and tweet text to the dataframe.
-            df.iloc[index, df.columns.get_loc('2')] = tweet.author.screen_name
-            df.iloc[index, df.columns.get_loc('3')] = tweet.text
+            df.iloc[index, df.columns.get_loc(2)] = tweet.author.screen_name
+            df.iloc[index, df.columns.get_loc(3)] = tweet.text
 
         except Exception, e:
             
@@ -119,7 +125,10 @@ def main(argv):
         index += 1
 
     # Remove rows with unavailable tweets.
-    df = df.drop(df[df['3'] == ''].index)
+    df = df.drop(df[df[3] == ''].index)
+
+    # save tweet_id as integer instead of float.
+    df[0] = df[0].astype(int)
 
     logger.info('Serializing Dataframe into a CSV File.')
     serialization_start_time = datetime.now()
@@ -128,8 +137,10 @@ def main(argv):
         header=['tweet_id', 'sentiment', 'author', 'content'], index=False,
         encoding='utf-8')
 
-    with codecs.open(DATASET_PATH + JSON_PATH + OUTPUT_FILENAME + \
-        '_error.json', 'w', encoding='utf-8') as dout:
+    split_path = OUTPUT_FILENAME.split('/')
+
+    with codecs.open(DATASET_PATH + split_path[0] + JSON_PATH + split_path[1] \
+        + '_error.json', 'w', encoding='utf-8') as dout:
         
         dout.write(ujson.dumps(error_codes, indent=4))
 
