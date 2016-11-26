@@ -11,12 +11,18 @@ from math import ceil
 from nltk.corpus import stopwords
 from nltk.tokenize import RegexpTokenizer
 import numpy as np
+import os
 import pandas as pd
 import re
 import string
+import sys
 from tqdm import trange, tqdm
 import ujson
-import sys
+
+# Hack to import modules form sibling paths.
+sys.path.insert(0, os.path.abspath('..'))
+
+import preprocessing.spelling_corrector.spell as spell
 
 start_time = datetime.now()
 
@@ -128,14 +134,28 @@ def main(argv):
         preprocessed_tweet = HTMLParser.HTMLParser() \
             .unescape(preprocessed_tweet)
 
+        emoticon_str = (ur'(\<[\/\\]?3|[\(\)\\|\*\$][\-\^]?[\:\;\=]' \
+            ur'|[\:\;\=B8][\-\^]?[3DOPp\@\$\*\\\)\(\/\|])(?=\s|[\!\.\?]|$)')
+
+        emoticon_regex = re.compile(emoticon_str)
+
+        # Lowercase tweet text.
+        preprocessed_tweet = preprocessed_tweet.lower()
+
         # Remove URLs and mentions with representative key code.
         preprocessed_tweet = re.sub(twitter_url_regex, 'URL', \
             preprocessed_tweet)
         preprocessed_tweet = re.sub(twitter_mention_regex, ' MENTION', \
             preprocessed_tweet)
 
-        # Lowercase tweet text.
-        preprocessed_tweet = preprocessed_tweet.lower()
+        matches = re.finditer(emoticon_regex, preprocessed_tweet)
+
+        for match_num, match in enumerate(matches):
+            # print match.group()
+            # TODO Compare text file.
+            # SAVE data into the model.
+            
+            break;
 
         # Removes all punctuation, contraction included.
         # preprocessed_tweet =  preprocessed_tweet.encode('utf-8') \
@@ -149,9 +169,19 @@ def main(argv):
         # tweet_words = [word.strip(string.punctuation) \
         #    for word in preprocessed_tweet.split()]
 
-        # Removes punctuation, contraction includes and separate them.
+        # Removes punctuation, contraction included and separate them.
         tokenizer = RegexpTokenizer(r'\w+')
         tweet_words = tokenizer.tokenize(preprocessed_tweet)
+
+        for word_index in xrange(len(tweet_words)):
+            word = tweet_words[word_index]
+
+            if not word.isdigit():
+                corrected_word = spell.correction(word)
+                if word != corrected_word:
+                    print word + ': ' + corrected_word
+                    tweet_words[word_index] = corrected_word
+
 
         # Removes stopwords.
         tweet_words = [word for word in tweet_words \
@@ -162,7 +192,10 @@ def main(argv):
         if divide and preprocess_index >= train_length:
             test_output.append({'label': label, 'words': tweet_words, \
                 'word2vec': []});
-        elif preprocess_index < train_length:
+        elif divide and preprocess_index < train_length:
+            output.append({'label': label, 'words': tweet_words, \
+                'word2vec': []});
+        elif not divide:
             output.append({'label': label, 'words': tweet_words, \
                 'word2vec': []});
 
@@ -187,10 +220,13 @@ def main(argv):
 
         process_sample(model, output, train_index, max_word_per_sentence)
 
-    for test_index in trange(len(test_output), \
-        desc='Calculating Word2Vec test values', total=len(test_output)):
+    # Optional if statement to hide console progress bar when not needed.
+    if divide:
+        for test_index in trange(len(test_output), \
+            desc='Calculating Word2Vec test values', total=len(test_output)):
 
-        process_sample(model, test_output, test_index, max_word_per_sentence)
+            process_sample(model, test_output, test_index, \
+                max_word_per_sentence)
 
     serialization_start_time = datetime.now()
 
@@ -198,7 +234,7 @@ def main(argv):
         logger.info('Serializing JSON into train and test files.')
 
         # Write train data to a JSON file.
-        serialize_sample(DATASET_PATH + OUTPUT_PATH + '_test.json', output, \
+        serialize_sample(DATASET_PATH + OUTPUT_PATH + '_train.json', output, \
             indent)
 
         # Write test data to a JSON file.
@@ -209,7 +245,7 @@ def main(argv):
         logger.info('Serializing JSON into a file.')
 
         # Write data to a JSON file.
-        serialize_sample(DATASET_PATH + OUTPUT_PATH + DISTRIBUTION + '.json', \
+        serialize_sample(DATASET_PATH + OUTPUT_PATH + '.json', \
             output, indent)
 
     with codecs.open(DATASET_PATH + OUTPUT_PATH + DISTRIBUTION + '.json', 'w', \

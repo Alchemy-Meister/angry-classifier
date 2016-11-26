@@ -1,3 +1,6 @@
+# /usr/bin/env
+# -*- coding: utf-8 -*-
+
 from datetime import datetime
 from keras import backend as K
 from keras.layers import Dense, Dropout, Activation, Embedding, Flatten
