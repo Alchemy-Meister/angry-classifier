@@ -182,7 +182,6 @@ def main(argv):
                     print word + ': ' + corrected_word
                     tweet_words[word_index] = corrected_word
 
-
         # Removes stopwords.
         tweet_words = [word for word in tweet_words \
             if word and word not in stop_words]

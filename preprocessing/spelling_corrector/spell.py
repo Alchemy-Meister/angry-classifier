@@ -11,15 +11,30 @@ MIT license: www.opensource.org/licenses/mit-license.php
 
 import os
 import re
+import codecs
 from collections import Counter
+
 
 def words(text): return re.findall(r'\w+', text.lower())
 
 script_dir = os.path.dirname(__file__)
-model_rel_path = 'language_model/english.txt'
+model_rel_path = 'language_model/english (wf)'
 model_abs_path = os.path.join(script_dir, model_rel_path)
 
-WORDS = Counter(words(open(model_abs_path).read()))
+WORDS = Counter()
+
+with codecs.open(model_abs_path, 'r', 'utf-8') as file:
+
+    for line in file.readlines():
+        word_count = line.rsplit(' ', 1)
+        
+        word = word_count[0]
+        count = int(word_count[1])
+
+        if word not in WORDS:
+            WORDS[word] = count
+        else:
+            WORDS[word] += count
 
 def P(word, N=sum(WORDS.values())): 
     "Probability of `word`."
