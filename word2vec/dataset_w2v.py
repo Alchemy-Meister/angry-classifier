@@ -38,8 +38,8 @@ NUM_MODEL_FEATURES = 300
 CLEAN_WORD_LIST = ['URL', 'MENTION']
 
 USAGE_STRING = 'Usage: dataset_w2v.py ' \
-            + '[-d] [-i] [-v] [--sample_division] [--indent] ' \
-            + '[--validation] [--size=] path_to_dataset'
+            + '[-d] [-i] [-v] [-h] [--sample_division] [--indent] ' \
+            + '[--validation] [--size=] [--help] path_to_dataset'
 
 def process_sample(model, sample, list_index, max_word_per_sentence):
     num_words = len(sample[list_index]['words'])
