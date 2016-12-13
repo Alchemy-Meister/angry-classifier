@@ -10,14 +10,16 @@ from keras.models import Sequential
 #from tensorflow.python.ops import control_flow_ops
 #tensorflow.python.control_flow_ops = control_flow_ops
 import time, os, gc, sys
+import getopt
 import ujson, json, base64
 import numpy as np
 
 NUM_FILTERS = 200
 BATCH_SIZE = 50
 NB_EPOCH = 1000
-DATASET_PATH = './../datasets/crowdflower/json/crowdflower'
 EVAL_PERIOD = 12
+
+CWD = os.getcwd()
 
 def json_numpy_obj_hook(dct):
     """Decodes a previously encoded numpy ndarray with proper shape and dtype.
@@ -66,11 +68,44 @@ def save_model(model):
     open(model_name + '.json', 'w').write(json_string)
     model.save_weights(model_name + '.h5', overwrite=True)
 
+def check_valid_path(path, desc):
+    if not os.path.isabs(path):
+        # Make relative path absolute.
+        path = os.path.join(CWD, path)
 
-def init_training():
+    if not os.path.isfile(path):
+        print 'Error: Invalid %s file.' % desc
+        sys.exit(2)
 
-    class_distribution = ujson.load(open(DATASET_PATH + '_distribution.json', \
-        'r'))
+    return path
+
+def init_training(argv):
+
+    train_path = None
+    test_path = None
+    distribution_path = None
+
+    try:
+        opts, args = getopt.getopt(argv,'',['train=', 'test=', 'distribution='])
+    except getopt.GetoptError:
+        print 'ERROR: Unknown parameter. Usage: cnn.py ' \
+            + '--train=path_to_train_word2vec --test=path_to_test_word2vec ' \
+            + '[--distribution=path_to_distribution_file]'
+        sys.exit(2)
+
+    for o, a in opts:
+        if o == '--train':
+            train_path = check_valid_path(a, 'train dataset')
+        elif o == '--test':
+            test_path = check_valid_path(a, 'test dataset')
+        elif o == '--distribution':
+            distribution_path = check_valid_path(a, 'distribution dataset')
+
+    if distribution_path is None:
+        distribution_path = train_path.rsplit('_train.json', 1)[0] \
+            + '_distribution.json'
+
+    class_distribution = ujson.load(open(distribution_path, 'r'))
     labels = [key for key in class_distribution['classes'].keys()]
     num_categories = len(class_distribution['classes'])
     max_phrase_length = class_distribution['max_phrase_length']
@@ -122,15 +157,13 @@ def init_training():
     merged.summary()
     
     evaluation = {}
-    X_train, y_train = prepare_samples(DATASET_PATH + '_train.json', labels, \
-        max_phrase_length)
-    X_test, y_test = prepare_samples(DATASET_PATH + '_test.json', labels, \
-        max_phrase_length)
+    X_train, y_train = prepare_samples(train_path, labels, max_phrase_length)
+    X_test, y_test = prepare_samples(test_path, labels, max_phrase_length)
     
     print 'Training...'
     sys.stdout.flush()
     
-    merged.fit([X_train, X_train, X_train], y_train, batch_size=50, \
+    merged.fit([X_train, X_train, X_train], y_train, batch_size=BATCH_SIZE, \
         nb_epoch=NB_EPOCH, validation_data=([X_test, X_test, X_test], y_test))
     
     print 'Saving model...'
@@ -141,5 +174,5 @@ def init_training():
 
 if __name__ == '__main__':
     start_time = datetime.now()
-    init_training()
+    init_training(sys.argv[1:])
     print "Elapsed time: " + str(datetime.now() - start_time)

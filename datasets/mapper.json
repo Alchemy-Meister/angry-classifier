@@ -1,0 +1,8 @@
+{
+    "map": {
+        "joy":"fun",
+        "hate": "anger",
+        "fear": "worry"
+    },
+    "remove": ["thankfulness"]
+}

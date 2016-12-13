@@ -89,8 +89,16 @@ def words(text): return re.findall(r'\w+', text.lower())
 
 # Generates word frequency string form a Counter() object.
 def count_dict_to_str(count_dict):
-    return ''.join([word_set[0] + ' ' + str(word_set[1]) + '\n' \
+    return ''.join([word_set[0].decode('utf-8') + ' ' + str(word_set[1]) + '\n' \
         for word_set in count_dict.iteritems()])[:-1]
+
+def update_dict(counter_dict, word, count):
+    if not word.isdigit():
+        if word not in counter_dict:
+            counter_dict[word] = count
+        else:
+            counter_dict[word] += count
+
 
 def main(argv):
     refresh = False
@@ -118,6 +126,8 @@ def main(argv):
     # If the info file does not exist, generates it.
     if not os.path.exists(MODEL_DIR + FILE_LIST_INFO_FILENAME):
         refresh = True
+
+    start_time = datetime.now()
 
     if refresh:
         files = update_file_list_info(clean)
@@ -147,10 +157,8 @@ def main(argv):
                     word = word_count[0]
                     count = int(word_count[1])
 
-                    if word not in counter_dict:
-                        counter_dict[word] = count
-                    else:
-                        counter_dict[word] += count
+                    update_dict(counter_dict, word, count)
+
         else:
             # If the word frequency does not exist, it generates it.
             try:
@@ -176,10 +184,7 @@ def main(argv):
                         word = word_set[0]
                         value = word_set[1]
 
-                        if word not in count_dict:
-                            counter_dict[word] = count
-                        else:
-                            counter_dict[word] += count
+                        update_dict(counter_dict, word, count)
 
                     # Generates word frequency file from the eBook.
                     with codecs.open(word_frequency, 'w', 'utf-8') as wfout:
@@ -211,6 +216,8 @@ def main(argv):
 
     print 'Serialization elapsed time: ' + str(datetime.now() \
         - serialization_start_time)
+
+    print 'Total elapsed time: ' + str(datetime.now() - start_time)
 
 if __name__ == '__main__':
     main(sys.argv[1:])

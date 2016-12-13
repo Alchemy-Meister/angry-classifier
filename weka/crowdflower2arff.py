@@ -17,7 +17,7 @@ binary_tag = 'binary_'
 output_filename = 'crowdflower.arff'
 
 def main(argv):
-    # Flag to performe binary classification.
+    # Flag to perform binary classification.
     binary_classification = False
 
     # Define and initialize arff data dictionary.
