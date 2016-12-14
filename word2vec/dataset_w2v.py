@@ -22,8 +22,6 @@ import ujson
 # Hack to import modules form sibling paths.
 sys.path.insert(0, os.path.abspath('..'))
 
-import preprocessing.spelling_corrector.spell as spell
-
 start_time = datetime.now()
 
 logging.basicConfig(level=logging.INFO)
@@ -108,7 +106,10 @@ def main(argv):
         sys.exit(2)
 
     for o, a in opts:
-        if o == '-d' or o == '--sample_division':
+        if o == '-h' or o == '--help':
+            print USAGE_STRING
+            exit(0)
+        elif o == '-d' or o == '--sample_division':
             divide = True
             task_description = 'Calculating Word2Vec train values'
             task2_description = 'Calculating Word2Vec test values'
@@ -124,9 +125,6 @@ def main(argv):
                 size = int(a)
             except:
                 print 'Error: size argument must be an integer.'
-        elif o == '-h' or o == 'help':
-            print USAGE_STRING
-            exit(0)
 
     if len(args) != 1:
         print 'Error: Dataset path must be provided.'
@@ -153,8 +151,11 @@ def main(argv):
             print 'Error: Invalid dataset file.'
             sys.exit(2)
 
+    # Load heavy modules.
     # Start loading gensim module.
     import gensim
+    # Start loading spell corrector.
+    import preprocessing.spelling_corrector.spell as spell
 
     # Loads NLTK's stopwords for English.
     stop_words = set(stopwords.words("english"))

@@ -169,8 +169,6 @@ def init_training(argv):
     
     scores = merged.evaluate([X_test, X_test, X_test], y_test, verbose=0, batch_size=BATCH_SIZE)
     print("%s: %.2f%%" % (merged.metrics_names[1], scores[1]*100))
-
-    print scores
     
     print 'LLAP'
 

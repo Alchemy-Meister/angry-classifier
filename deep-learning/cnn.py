@@ -6,6 +6,8 @@ from keras import backend as K
 from keras.layers import Dense, Dropout, Activation, Embedding, Flatten
 from keras.layers import Convolution2D, MaxPooling2D, Merge
 from keras.models import Sequential
+from keras.models import model_from_json
+
 #import tensorflow
 #from tensorflow.python.ops import control_flow_ops
 #tensorflow.python.control_flow_ops = control_flow_ops
@@ -20,6 +22,15 @@ NB_EPOCH = 1000
 EVAL_PERIOD = 12
 
 CWD = os.getcwd()
+
+TARGETS = ['train', 'test', 'all']
+
+USAGE_STRING = 'Usage: cnn.py [-h] [--help] --target=[train, test, all] ' \
+    + '--train=path_to_train_word2vec ' \
+    + '--validation=path_to_validation_word2vect ' \
+    + '[--test=path_to_test_word2vec]' \
+    + '[--distribution=path_to_distribution_file] ' \
+    + '[--load_model=path_to_model] [--output=save_model_path]'
 
 def json_numpy_obj_hook(dct):
     """Decodes a previously encoded numpy ndarray with proper shape and dtype.
@@ -62,11 +73,18 @@ def one_hot_encoder(total_classes):
         encoder[code] = vector.tolist()
     return encoder
 
-def save_model(model):
+def save_model(model, output):
     json_string = model.to_json()
-    model_name = 'experiment_withoutcontext_6'
-    open(model_name + '.json', 'w').write(json_string)
-    model.save_weights(model_name + '.h5', overwrite=True)
+    open(output, + '.json' 'w').write(json_string)
+    model.save_weights(output + '.h5', overwrite=True)
+
+def load_model(model, weight_file, file_format):
+    if file_format == 'json':
+        return  model_from_json(weight_file)
+    elif file_format == 'h5':
+        return model.load_weights(weight_file)
+    else:
+        return None
 
 def check_valid_path(path, desc):
     if not os.path.isabs(path):
@@ -79,31 +97,90 @@ def check_valid_path(path, desc):
 
     return path
 
+def check_valid_dir(dir_name):
+    if not os.path.isabs(dir_name):
+        dir_name = os.path.join(CWD, dir_name)
+
+    if not os.path.exists(dir_name):
+        try:
+            os.makedirs(dir_name)
+        except:
+            print 'Error: Output directory file could not be created.'
+            sys.exit(2)
+
+    return dir_name
+
+
 def init_training(argv):
 
     train_path = None
+    validation_path = None
     test_path = None
     distribution_path = None
+    model_path = None
+    output_path = check_valid_dir('model_weights')
+    target = TARGETS[2]
+    merged = None
 
     try:
-        opts, args = getopt.getopt(argv,'',['train=', 'test=', 'distribution='])
+        opts, args = getopt.getopt(argv,'h',['train=', 'validation=','test=', \
+            'load_model=', 'distribution=', 'target=', 'output=', 'help'])
     except getopt.GetoptError:
-        print 'ERROR: Unknown parameter. Usage: cnn.py ' \
-            + '--train=path_to_train_word2vec --test=path_to_test_word2vec ' \
-            + '[--distribution=path_to_distribution_file]'
+        print 'Error: Unknown parameter. %s' % USAGE_STRING
         sys.exit(2)
 
     for o, a in opts:
-        if o == '--train':
+        if o == '-h' or o == '--help':
+            print USAGE_STRING
+            sys.exit(0)
+        elif o == '--train':
             train_path = check_valid_path(a, 'train dataset')
+        elif o == '--validation':
+            validation_path = check_valid_path(a, 'validation dataset')
         elif o == '--test':
             test_path = check_valid_path(a, 'test dataset')
         elif o == '--distribution':
             distribution_path = check_valid_path(a, 'distribution dataset')
+        elif o == '--load_model':
+            model_path = check_valid_path(a, 'model')
+        elif o == '--output':
+            output_path = check_valid_dir(a)
+        elif o == '--target':
+            valid_target = False
+            for value in TARGETS:
+                if a.lower() == value:
+                    target = value
+                    valid_target = True
+                    break
+
+            if not valid_target:
+                print 'Error: Unknown target, specified a valid one from: %s' \
+                    % str(TARGETS).strip('()')
+                sys.exit(2)
+
+    if target == TARGETS[0] or target == TARGETS[2]:
+        if train_path == None or validation_path == None:
+            print 'Error: Train and Validation dataset paths are required. %s' \
+                % USAGE_STRING
+            sys.exit(2)
+
+    if target == TARGETS[1] or target == TARGETS[2]:
+        if test_path == None:
+            print 'Error: Test dataset path is required. %s' % USAGE_STRING
+            sys.exit(2)
+
+        if target == TARGETS[1] and model_path == None:
+            print 'Error: model path must be provided to execute the test. %s' \
+                % USAGE_STRING
+            sys.exit(2)
 
     if distribution_path is None:
-        distribution_path = train_path.rsplit('_train.json', 1)[0] \
-            + '_distribution.json'
+        if train_path is not None:
+            distribution_path = train_path.rsplit('_train.json', 1)[0] \
+                + '_distribution.json'
+        else:
+            distribution_path = test_path.rsplit('_test.json', 1)[0] \
+                + '_distribution.json'
 
     class_distribution = ujson.load(open(distribution_path, 'r'))
     labels = [key for key in class_distribution['classes'].keys()]
@@ -111,66 +188,87 @@ def init_training(argv):
     max_phrase_length = class_distribution['max_phrase_length']
     model_size = class_distribution['model_feature_length']
 
-    print "Model size: " + str(model_size)
-    print "Number of filters: " + str(NUM_FILTERS)
-    print "Batch size: " + str(BATCH_SIZE)
-    print "Number of epochs: " + str(NB_EPOCH)
-    print "Evaluation period: " + str(EVAL_PERIOD)
-    print 'Max. phrase length: ' + str(max_phrase_length)
-    print 'Building model...'
+    if target == TARGETS[1] and '.json' in model_path.rsplit('/', 1)[1]:
+        merged = load_model(Sequential(), model_path, 'json')
 
-    branch_ngram_3 = Sequential()
+    if merged is None:
+        print "Model size: " + str(model_size)
+        print "Number of filters: " + str(NUM_FILTERS)
+        print "Batch size: " + str(BATCH_SIZE)
+        print "Number of epochs: " + str(NB_EPOCH)
+        print "Evaluation period: " + str(EVAL_PERIOD)
+        print 'Max. phrase length: ' + str(max_phrase_length)
+        print 'Building model...'
 
-    branch_ngram_3.add(Convolution2D(NUM_FILTERS, 3, model_size, \
-        input_shape=(max_phrase_length, model_size, 1), border_mode='valid', \
-        activation='relu'))
-    branch_ngram_3.add(MaxPooling2D(pool_size=(max_phrase_length - 3 , 1)))
-    #branch_ngram_3.add(Flatten())
+        branch_ngram_3 = Sequential()
 
-    branch_ngram_4 = Sequential()
-    branch_ngram_4.add(Convolution2D(NUM_FILTERS, 4, model_size, \
-        input_shape=(max_phrase_length, model_size, 1), border_mode='valid',  
-        activation='relu'))
-    branch_ngram_4.add(MaxPooling2D(pool_size=(max_phrase_length - 4 + 1, 1)))
-    #branch_ngram_4.add(Flatten())
+        branch_ngram_3.add(Convolution2D(NUM_FILTERS, 3, model_size, \
+            input_shape=(max_phrase_length, model_size, 1), \
+            border_mode='valid', activation='relu'))
+        branch_ngram_3.add(MaxPooling2D(pool_size=(max_phrase_length - 3 , 1)))
+        #branch_ngram_3.add(Flatten())
 
-    branch_ngram_5 = Sequential()
-    branch_ngram_5.add(Convolution2D(NUM_FILTERS, 5, model_size, \
-        input_shape=(max_phrase_length, model_size, 1), border_mode='valid', \
-        activation='relu'))
-    branch_ngram_5.add(MaxPooling2D(pool_size=(max_phrase_length - 5 + 1, 1)))
-    #branch_ngram_5.add(Flatten())
+        branch_ngram_4 = Sequential()
+        branch_ngram_4.add(Convolution2D(NUM_FILTERS, 4, model_size, \
+            input_shape=(max_phrase_length, model_size, 1), border_mode='valid',  
+            activation='relu'))
+        branch_ngram_4.add(MaxPooling2D( \
+            pool_size=(max_phrase_length - 4 + 1, 1)) )
+        #branch_ngram_4.add(Flatten())
 
-    merged = Sequential()
-    # merged = Merge([branch_ngram_2, branch_ngram_3, branch_ngram_4], \
-    # merge_mode='concat')
+        branch_ngram_5 = Sequential()
+        branch_ngram_5.add(Convolution2D(NUM_FILTERS, 5, model_size, \
+            input_shape=(max_phrase_length, model_size, 1), \
+            border_mode='valid', activation='relu'))
+        branch_ngram_5.add(MaxPooling2D( \
+            pool_size=(max_phrase_length - 5 + 1, 1)) )
+        #branch_ngram_5.add(Flatten())
 
-    merged.add(Merge([branch_ngram_3, branch_ngram_4, branch_ngram_5], \
-        mode='concat', concat_axis=2))
-    merged.add(Flatten())
-    merged.add(Dropout(0.5))
+        merged = Sequential()
+        # merged = Merge([branch_ngram_2, branch_ngram_3, branch_ngram_4], \
+        # merge_mode='concat')
 
-    merged.add(Dense(num_categories))
-    merged.add(Activation('softmax'))
-    merged.compile(loss='categorical_crossentropy', optimizer='adam', \
-        metrics=['accuracy', 'mse', 'mae'])
-    merged.summary()
+        merged.add(Merge([branch_ngram_3, branch_ngram_4, branch_ngram_5], \
+            mode='concat', concat_axis=2))
+        merged.add(Flatten())
+        merged.add(Dropout(0.5))
+
+        merged.add(Dense(num_categories))
+        merged.add(Activation('softmax'))
+        merged.compile(loss='categorical_crossentropy', optimizer='adam', \
+            metrics=['accuracy', 'mse', 'mae'])
+        merged.summary()
     
-    evaluation = {}
-    X_train, y_train = prepare_samples(train_path, labels, max_phrase_length)
-    X_test, y_test = prepare_samples(test_path, labels, max_phrase_length)
+    if target == TARGETS[0] or target == TARGETS[2]:
+        X_train, y_train = prepare_samples(train_path, labels, \
+            max_phrase_length)
+        X_validation, y_validation = prepare_samples(validation_path, labels, \
+            max_phrase_length)
     
-    print 'Training...'
-    sys.stdout.flush()
+        print 'Training...'
+        sys.stdout.flush()
     
-    merged.fit([X_train, X_train, X_train], y_train, batch_size=BATCH_SIZE, \
-        nb_epoch=NB_EPOCH, validation_data=([X_test, X_test, X_test], y_test))
+        merged.fit([X_train, X_train, X_train], y_train, \
+            batch_size=BATCH_SIZE, nb_epoch=NB_EPOCH, \
+            validation_data=([X_validation, X_validation, X_validation], \
+                y_validation))
     
-    print 'Saving model...'
-    sys.stdout.flush()
+        print 'Saving model...'
+        sys.stdout.flush()
     
-    save_model(merged)
-    print 'LLAP'
+        save_model(merged, output_path)
+        print 'LLAP'
+
+    if target == TARGETS[1] or target == TARGETS[2]:
+        if merged is None:
+            merged = load_model(merged, model_path, 'h5')
+
+        X_test, y_test = prepare_samples(test_path, labels, max_phrase_length)
+
+        scores = merged.evaluate([X_test, X_test, X_test], y_test, verbose=0, \
+            batch_size=BATCH_SIZE)
+
+        print('%s: %.2f%%' % (merged.metrics_names[1], scores[1]*100))
 
 if __name__ == '__main__':
     start_time = datetime.now()
