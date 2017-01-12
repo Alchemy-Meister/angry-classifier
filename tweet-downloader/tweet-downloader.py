@@ -134,7 +134,7 @@ def main(argv):
     serialization_start_time = datetime.now()
 
     df.to_csv(path_or_buf=DATASET_PATH + OUTPUT_FILENAME + '.csv', \
-        header=['tweet_id', 'sentiment', 'author', 'content'], index=False,
+        header=['tweet_id', 'label', 'author', 'content'], index=False,
         encoding='utf-8')
 
     split_path = OUTPUT_FILENAME.split('/')

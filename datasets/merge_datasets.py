@@ -8,7 +8,7 @@ import pandas as pd
 import sys
 import ujson
 
-CSV_COLUMNS = ['tweet_id', 'sentiment', 'author', 'content']
+CSV_COLUMNS = ['tweet_id', 'label', 'author', 'content']
 
 # Author column is not required.
 COMPULSORY_COLUMNS = list(CSV_COLUMNS)
@@ -27,7 +27,7 @@ NON_ENGLISH_CHARS = ('¿','À','Á','Â','Ã','Ä','Å','Æ','Ç','È','É','Ê'
 
 def path_num_checker(path_num):
     if path_num < 2:
-        print 'ERROR: path to at least two dataset paths must be provided.'
+        print 'ERROR: at least two dataset paths must be provided.'
         sys.exit(2)
 
 def main(argv):
@@ -37,11 +37,11 @@ def main(argv):
 
     try:
         opts, args = getopt.getopt(argv,'b',['binary_classification', \
-            'mapper='])
-
+            'mapper=', 'output_filename='])
     except getopt.GetoptError:
         print 'ERROR: Unknown parameter. Usage: merge_datasets.py [-b] ' \
             + '[--binary_classification] --mapper=path_to_mapper ' \
+            + 'output_filename=output_name.csv' \
             + 'path_to_dataset_1 path_to_dataset_N-1 path_to_dataset_N'
         sys.exit(2)
 
@@ -59,6 +59,9 @@ def main(argv):
             else:
                 print 'ERROR: Invalid mapper path.'
                 sys.exit(2)
+        elif o == '--output_filename':
+            global  OUTPUT_FILENAME
+            OUTPUT_FILENAME = a
 
     num_valid_paths = len(args)
 
@@ -112,39 +115,50 @@ def main(argv):
     if mapper is not None:
         # Replace sentiment name based on mapper.
         for key, value in mapper['map'].iteritems():
-            dataset['sentiment'] = dataset['sentiment'].replace(key, value)
+            dataset[CSV_COLUMNS[1]] = dataset[CSV_COLUMNS[1]] \
+                .replace(key, value)
+
         # Remove sentiment types based on mapper.
         for value in mapper['remove']:
-            dataset = dataset.drop(dataset[dataset.sentiment == value].index)
+            dataset = dataset.drop(dataset[dataset.label == value].index)
 
     if binary_classification:
+        binary_label = mapper['binary']
+
         # Creates a binary sub-samples of the original dataframe
-        anger_tweets = dataset[(dataset.sentiment == 'anger')].copy()
-        no_anger_tweets = dataset[(dataset.sentiment != 'anger')].copy()
+        positive_tweets = dataset[(dataset.label == binary_label)].copy()
+        negative_tweets = dataset[(dataset.label != binary_label)].copy()
+
+        if len(positive_tweets.index) == 0 or len(negative_tweets.index) == 0:
+            print 'Error: Unable to perform binary dataset for the ' \
+                + binary_label + ' target class. Need at least two distinct ' \
+                + 'labels.'
+            sys.exit(2)
 
         # Replace sentiment labels for binary classification
-        anger_tweets['sentiment'] = 'anger'
-        no_anger_tweets['sentiment'] = 'no_anger'
+        positive_tweets[CSV_COLUMNS[1]] = binary_label
+        negative_tweets[CSV_COLUMNS[1]] = 'no_' + binary_label
 
-        # Select a random subset of len(anger_tweets) without replacement.
-        no_anger_tweets = no_anger_tweets.take( \
-            np.random.permutation(len(no_anger_tweets))[:len(anger_tweets)] )
+        # Select a random subset of len(positive_tweets) without replacement.
+        negative_tweets = negative_tweets.take( \
+            np.random.permutation(len(negative_tweets))[:len(positive_tweets)] )
 
         # Merge both dataframes.
-        anger_tweets = anger_tweets.append(no_anger_tweets, ignore_index=True)
+        positive_tweets = positive_tweets.append(negative_tweets, \
+            ignore_index=True)
 
         # Shuffle
-        dataset = anger_tweets.sample(frac=1).reset_index(drop=True)
+        dataset = positive_tweets.sample(frac=1).reset_index(drop=True)
 
         # Serialize dataframe.
         dataset.to_csv(path_or_buf=os.path.join(OUTPUT_DIR, \
             BINARY_TAG + OUTPUT_FILENAME), \
-            header=['tweet_id', 'sentiment', 'author', 'content'], index=False,
+            header=CSV_COLUMNS, index=False,
             encoding='utf-8')
     else:
         #Serialize dataframe.
         dataset.to_csv(path_or_buf=os.path.join(OUTPUT_DIR, OUTPUT_FILENAME), \
-            header=['tweet_id', 'sentiment', 'author', 'content'], index=False,
+            header=CSV_COLUMNS, index=False,
             encoding='utf-8')
 
 if __name__ == "__main__":
