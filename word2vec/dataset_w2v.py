@@ -155,6 +155,7 @@ def main(argv):
     # Start loading gensim module.
     import gensim
     # Start loading spell corrector.
+    global spell
     import preprocessing.spelling_corrector.spell as spell
 
     # Loads NLTK's stopwords for English.
@@ -325,6 +326,10 @@ def main(argv):
                 process_sample(model, test_output, test_index, \
                     max_word_per_sentence)
 
+    # Release memory.
+    del model
+    del df
+
     serialization_start_time = datetime.now()
 
     if divide:
@@ -335,16 +340,27 @@ def main(argv):
             # Write validation data to a JSON file.
             serialize_sample(output_path + '_validation.json', \
                 validation_or_test_output, indent)
+            
+            # Resealse memory.
+            del validation_or_test_output
+
         else:
             logger.info('Serializing JSON into train and test files.')
 
         # Write train data to a JSON file.
         serialize_sample(output_path + '_train.json', output, \
             indent)
+        
+        # Resealse memory.
+        del output
 
         # Write test data to a JSON file.
         serialize_sample(output_path + '_test.json', \
             test_output, indent)
+        
+        # Resealse memory.
+        del test_output
+
     else:
 
         logger.info('Serializing JSON into a file.')
@@ -353,10 +369,16 @@ def main(argv):
         serialize_sample(output_path + '.json', \
             output, indent)
 
+        # Resealse memory.
+        del output
+
     with codecs.open(output_path + DISTRIBUTION + '.json', 'w', \
             encoding='utf-8') as dout:
 
-            dout.write(ujson.dumps(distribution, indent=4))
+        dout.write(ujson.dumps(distribution, indent=4))
+
+    # Release memory.
+    del distribution
 
     logger.info('Serialization finished, elapsed time: %s', \
         str(datetime.now() - serialization_start_time))
