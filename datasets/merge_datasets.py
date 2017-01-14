@@ -34,14 +34,16 @@ def main(argv):
     # Flag to perform binary classification.
     binary_classification = False
     mapper = None
+    hashtags = []
 
     try:
         opts, args = getopt.getopt(argv,'b',['binary_classification', \
-            'mapper=', 'output_filename='])
+            'mapper=', 'remove-hashtags=', 'output_filename='])
     except getopt.GetoptError:
         print 'ERROR: Unknown parameter. Usage: merge_datasets.py [-b] ' \
             + '[--binary_classification] --mapper=path_to_mapper ' \
-            + 'output_filename=output_name.csv' \
+            + '--remove-hashtags=tag1,tag2,tagN '\
+            + 'output_filename=output_name.csv ' \
             + 'path_to_dataset_1 path_to_dataset_N-1 path_to_dataset_N'
         sys.exit(2)
 
@@ -62,6 +64,10 @@ def main(argv):
         elif o == '--output_filename':
             global  OUTPUT_FILENAME
             OUTPUT_FILENAME = a
+        elif o == '--remove-hashtags':
+            for hashtag in a.split(','):
+                if hashtag != '':
+                    hashtags.append('#' + hashtag)
 
     num_valid_paths = len(args)
 
@@ -104,8 +110,9 @@ def main(argv):
                 if dataset is None:
                     dataset = df
                 else:
+                    # Remove dublicates tweets, keeps first instance.
                     dataset = dataset.append(df, ignore_index=True)\
-                        .drop_duplicates(keep=False)
+                        .drop_duplicates(CSV_COLUMNS[3], keep='first')
 
         else:
             # Not a valid dataset path.
@@ -122,8 +129,20 @@ def main(argv):
         for value in mapper['remove']:
             dataset = dataset.drop(dataset[dataset.label == value].index)
 
+    hashtag_num = len(hashtags)
+
     if binary_classification:
         binary_label = mapper['binary']
+
+        # Remove target labels (hashtags) from tweet content.
+        for hastag in hashtags:
+            dataset[CSV_COLUMNS[3]] = dataset[CSV_COLUMNS[3]].str \
+                .replace(hastag, ' ', case=False)
+
+        # Trim tweet text if needed.
+        if hashtag_num > 0:
+            dataset[CSV_COLUMNS[3]] = dataset[CSV_COLUMNS[3]].str \
+                .strip()
 
         # Creates a binary sub-samples of the original dataframe
         positive_tweets = dataset[(dataset.label == binary_label)].copy()
@@ -156,6 +175,9 @@ def main(argv):
             header=CSV_COLUMNS, index=False,
             encoding='utf-8')
     else:
+         # Shuffle
+        dataset = dataset.sample(frac=1).reset_index(drop=True)
+
         #Serialize dataframe.
         dataset.to_csv(path_or_buf=os.path.join(OUTPUT_DIR, OUTPUT_FILENAME), \
             header=CSV_COLUMNS, index=False,

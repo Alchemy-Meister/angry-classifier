@@ -19,9 +19,6 @@ import sys
 from tqdm import trange, tqdm
 import ujson
 
-# Hack to import modules form sibling paths.
-sys.path.insert(0, os.path.abspath('..'))
-
 start_time = datetime.now()
 
 logging.basicConfig(level=logging.INFO)
@@ -29,6 +26,10 @@ logger = logging.getLogger(__name__)
 
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 CWD = os.getcwd()
+
+# Hack to import modules form sibling paths.
+sys.path.insert(0, DIR_PATH + '/..')
+
 DISTRIBUTION = '_distribution'
 
 NUM_MODEL_FEATURES = 300
@@ -36,10 +37,11 @@ NUM_MODEL_FEATURES = 300
 CLEAN_WORD_LIST = ['URL', 'MENTION']
 
 USAGE_STRING = 'Usage: dataset_w2v.py ' \
-            + '[-d] [-i] [-v] [-h] [--sample_division] [--indent] ' \
-            + '[--validation] [--size=] [--help] path_to_dataset'
+            + '[-d] [-i] [-v] [-s] [-h] [--sample_division] [--indent] ' \
+            + '[--validation] [--spell_check] [--size=] [--help] ' \
+            + 'path_to_dataset'
 
-def process_sample(model, sample, list_index, max_word_per_sentence):
+def process_sample(model, sample, list_index, max_word_per_sentence, spell):
     num_words = len(sample[list_index]['words'])
 
     for index in xrange(max_word_per_sentence):
@@ -48,7 +50,7 @@ def process_sample(model, sample, list_index, max_word_per_sentence):
 
             word = sample[list_index]['words'][index]
 
-            vector = word2vector(model, word)
+            vector = word2vector(model, word, spell)
 
             sample[list_index]['word2vec'].append(vector)
 
@@ -69,13 +71,13 @@ def serialize_sample(sample_output_path, sample, indent):
         else:
             file.write(ujson.dumps(sample))
 
-def word2vector(model, word):
+def word2vector(model, word, spell_check):
     vector = np.zeros(NUM_MODEL_FEATURES).tolist()
 
     try:
         vector = model[word].tolist()
     except KeyError:
-        if not word.isdigit() and word not in CLEAN_WORD_LIST:
+        if spell_check and not word.isdigit() and word not in CLEAN_WORD_LIST:
     
             from string import printable
 
@@ -93,14 +95,17 @@ def main(argv):
     divide = False
     indent = False
     validation = False
+    spell_check = False
     size = None
     task_description = 'Calculating Word2Vec values'
+
+    model_rel_path = '/model/GoogleNews-vectors-negative300.bin'
 
     output_path = None
 
     try:
-        opts, args = getopt.getopt(argv,'divh',['sample_division', 'indent', \
-            'size=', 'help'])
+        opts, args = getopt.getopt(argv,'divsh',['sample_division', 'indent', \
+            'validation', 'size=', 'spell_check', 'help'])
     except getopt.GetoptError:
         print 'ERROR: Unknown parameter. %s' % USAGE_STRING 
         sys.exit(2)
@@ -125,6 +130,8 @@ def main(argv):
                 size = int(a)
             except:
                 print 'Error: size argument must be an integer.'
+        elif o == '-s' or o == '--spell_check':
+            spell_check = True
 
     if len(args) != 1:
         print 'Error: Dataset path must be provided.'
@@ -145,6 +152,9 @@ def main(argv):
             output_path = os.path.join(dataset_path, 'json/' \
                 + source_path[1].rsplit('.csv')[0])
 
+            if spell_check:
+                output_path = output_path + '_spell'
+
             # Loads CSV into dataframe.
             df = pd.read_csv(args, usecols=[1,3], header=0)
         else:
@@ -155,8 +165,9 @@ def main(argv):
     # Start loading gensim module.
     import gensim
     # Start loading spell corrector.
-    global spell
-    import preprocessing.spelling_corrector.spell as spell
+    if spell_check:
+        global spell
+        import preprocessing.spelling_corrector.spell as spell
 
     # Loads NLTK's stopwords for English.
     stop_words = set(stopwords.words("english"))
@@ -166,7 +177,7 @@ def main(argv):
     # Loads Word2Vec model.
     # Load Google's pre-trained Word2Vec model.
     model = gensim.models.Word2Vec.load_word2vec_format( \
-        './../word2vec/model/GoogleNews-vectors-negative300.bin', binary=True)
+        DIR_PATH + model_rel_path, binary=True)
 
     logger.info('Model loading complete, elapsed time: %s', \
         str(datetime.now() - model_load_start_time))
@@ -308,7 +319,8 @@ def main(argv):
     for train_index in trange(len(output), desc=task_description, \
         total=len(output)):
 
-        process_sample(model, output, train_index, max_word_per_sentence)
+        process_sample(model, output, train_index, max_word_per_sentence, \
+            spell_check)
 
     # Optional if statement to hide console progress bar when not needed.
     if divide:
@@ -316,7 +328,7 @@ def main(argv):
             desc=task2_description, total=len(validation_or_test_output)):
 
             process_sample(model, validation_or_test_output, \
-                val_test_index, max_word_per_sentence)
+                val_test_index, max_word_per_sentence, spell_check)
 
         if validation:
             for test_index in trange(len(test_output), \
@@ -324,7 +336,7 @@ def main(argv):
                 total=len(test_output)):
 
                 process_sample(model, test_output, test_index, \
-                    max_word_per_sentence)
+                    max_word_per_sentence, spell_check)
 
     # Release memory.
     del model

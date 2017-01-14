@@ -79,22 +79,24 @@ def main(argv):
     df = pd.read_csv(dataset_path, header=0, usecols=[1,3,4], \
         dtype={'Tweet ID': np.int64})
 
+    # Remove duplicate tweet texts.
+    df = df.drop_duplicates(COMPULSORY_COLUMNS[3], keep='first')
+
     # Add label column to dataframe.
     df['label'] = pd.Series('irony', index=df.index)
     # Reorder the columns.
     df = df[COMPULSORY_COLUMNS]
-
-    df_length = len(df.index)
-    processing_index = 0
     
     df[COMPULSORY_COLUMNS[2]] = df[COMPULSORY_COLUMNS[2]].str.replace('@', '')
     
     hashtag_num = len(hashtags)
 
+    # Remove target labels (hashtags) from tweet content.
     for hastag in hashtags:
         df[COMPULSORY_COLUMNS[3]] = df[COMPULSORY_COLUMNS[3]].str \
             .replace(hastag, ' ', case=False)
 
+    # Trim tweet text if needed.
     if hashtag_num > 0:
         df[COMPULSORY_COLUMNS[3]] = df[COMPULSORY_COLUMNS[3]].str \
             .strip()

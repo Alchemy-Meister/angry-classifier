@@ -258,16 +258,15 @@ def main(argv):
     distribution_path = None
     model_path = None
     train_output_path = None
+    test_output_path = None
 
     target = TARGETS[2]
     merged = None
     dataset_name = None
-    train_output_path = None
-    test_output_path = None
 
     try:
         opts, args = getopt.getopt(argv,'h',['train=', 'validation=','test=', \
-            'load_model=', 'distribution=', 'target=', 'output=', 'help'])
+            'load_model=', 'distribution=', 'target=', 'help'])
     except getopt.GetoptError:
         print 'Error: Unknown parameter. %s' % USAGE_STRING
         sys.exit(2)
@@ -286,8 +285,6 @@ def main(argv):
             distribution_path = check_valid_path(a, 'distribution dataset')
         elif o == '--load_model':
             model_path = check_valid_path(a, 'model')
-        elif o == '--output':
-            output_path = check_valid_dir(a)
         elif o == '--target':
             valid_target = False
             for value in TARGETS:
