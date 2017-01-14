@@ -4,9 +4,14 @@ json/
 *.bin
 datasets/crowdflower/json/*.json
 datasets/Wang/json/*.json
+
 preprocessing/spelling_corrector/language_model/model_file_list_info.json
 preprocessing/spelling_corrector/language_model/project_gutenberg/
 preprocessing/spelling_corrector/utils/
+
+deep-learning/multilabel_results
+deep-learning/result_binary_dataset_spellcheck
+deep-learning/results_spellcheck
 
 
 # Byte-compiled / optimized / DLL files
