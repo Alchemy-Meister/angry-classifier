@@ -90,14 +90,14 @@ def generate_model(model_size, max_phrase_length, num_categories):
     branch_ngram_3 = Sequential()
 
     branch_ngram_3.add(Convolution2D(NUM_FILTERS, 3, model_size, \
-        input_shape=(max_phrase_length, model_size, 1), \
+        input_shape=(1, max_phrase_length, model_size), \
         border_mode='valid', activation='relu'))
     branch_ngram_3.add(MaxPooling2D(pool_size=(max_phrase_length - 3 , 1)))
     #branch_ngram_3.add(Flatten())
 
     branch_ngram_4 = Sequential()
     branch_ngram_4.add(Convolution2D(NUM_FILTERS, 4, model_size, \
-        input_shape=(max_phrase_length, model_size, 1), border_mode='valid',
+        input_shape=(1, max_phrase_length, model_size), border_mode='valid',
         activation='relu'))
     branch_ngram_4.add(MaxPooling2D( \
         pool_size=(max_phrase_length - 4 + 1, 1)) )
@@ -105,7 +105,7 @@ def generate_model(model_size, max_phrase_length, num_categories):
 
     branch_ngram_5 = Sequential()
     branch_ngram_5.add(Convolution2D(NUM_FILTERS, 5, model_size, \
-        input_shape=(max_phrase_length, model_size, 1), \
+        input_shape=(1, max_phrase_length, model_size), \
         border_mode='valid', activation='relu'))
     branch_ngram_5.add(MaxPooling2D( \
         pool_size=(max_phrase_length - 5 + 1, 1)) )
