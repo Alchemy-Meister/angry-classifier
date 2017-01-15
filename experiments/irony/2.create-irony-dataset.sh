@@ -1,7 +1,5 @@
 #!/bin/sh
 
-workon anger-detection
-
 python ../../datasets/merge_datasets.py --binary_classification\
     --mapper=../../datasets/irony_mapper.json \
     --output_filename=irony_dataset.csv \
