@@ -123,7 +123,7 @@ def generate_model(model_size, max_phrase_length, num_categories):
 
     merged.add(Dense(num_categories))
     merged.add(Activation('softmax'))
-    model.compile(loss='categorical_crossentropy', optimizer='adam', \
+    merged.compile(loss='categorical_crossentropy', optimizer='adam', \
         metrics=['accuracy', 'mse', 'mae'])
 
     return merged
