@@ -86,7 +86,8 @@ def main(argv):
     df['label'] = pd.Series('irony', index=df.index)
     # Reorder the columns.
     df = df[COMPULSORY_COLUMNS]
-    
+
+    # Remove @ character from author's username.
     df[COMPULSORY_COLUMNS[2]] = df[COMPULSORY_COLUMNS[2]].str.replace('@', '')
     
     hashtag_num = len(hashtags)

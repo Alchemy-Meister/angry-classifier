@@ -38,7 +38,8 @@ USAGE_STRING = 'Usage: cnn.py [-h] [--help] --target=[train, test, all] ' \
     + '--validation=path_to_validation_word2vect ' \
     + '[--test=path_to_test_word2vec]' \
     + '[--distribution=path_to_distribution_file] ' \
-    + '[--load_model=path_to_model] [--output=save_model_path]'
+    + '[--load_model=path_to_model] [--load_weights=path_to_weights] ' \
+    + '[--output=save_model_path]'
 
 def json_numpy_obj_hook(dct):
     """Decodes a previously encoded numpy ndarray with proper shape and dtype.
@@ -122,7 +123,7 @@ def generate_model(model_size, max_phrase_length, num_categories):
 
     merged.add(Dense(num_categories))
     merged.add(Activation('softmax'))
-    merged.compile(loss='categorical_crossentropy', optimizer='adam', \
+    model.compile(loss='categorical_crossentropy', optimizer='adam', \
         metrics=['accuracy', 'mse', 'mae'])
 
     return merged
@@ -132,13 +133,17 @@ def save_model(model, output):
     open(output + '.json', 'w').write(json_string)
     model.save_weights(output + '.h5', overwrite=True)
 
-def load_model(model, weight_file, file_format):
-    if file_format == 'json':
-        return  model_from_json(weight_file)
-    elif file_format == 'h5':
-        return model.load_weights(weight_file)
-    else:
-        return None
+def load_model(model_path, weights_path):
+    model_file = open(model_path, 'r')
+    model_str = model_file.read()
+    model_file.close()
+
+    model = model_from_json(model_str)
+    model.load_weights(weights_path)
+    model.compile(loss='categorical_crossentropy', optimizer='adam', \
+        metrics=['accuracy', 'mse', 'mae'])
+
+    return model
 
 def check_valid_path(path, desc):
     if not os.path.isabs(path):
@@ -178,7 +183,6 @@ def train(train_path, validation_path, model, labels, max_phrase_length, \
     checkpoint = ModelCheckpoint(MODEL_WEIGHT_PATH + '/{epoch:02d}-{' \
         + STOP_CONDITION + ':.2f}.hdf5', monitor=STOP_CONDITION, verbose=0, \
         save_best_only=True, save_weights_only=False, mode='auto')
-
 
     print 'Training...'
     sys.stdout.flush()
@@ -240,10 +244,10 @@ def test(test_path, model, labels, max_phrase_length, output_path):
 
     t = time.localtime()
     timestamp = time.strftime('%b-%d-%Y_%H%M', t)
-    
+
     with codecs.open(output_path + '_result-' + timestamp, 'w', \
         encoding='utf-8') as file:
-        
+
         file.write(ujson.dumps(results, indent=4))
 
 def main(argv):
@@ -257,6 +261,7 @@ def main(argv):
     test_path = None
     distribution_path = None
     model_path = None
+    weights_path = None
     train_output_path = None
     test_output_path = None
 
@@ -266,7 +271,7 @@ def main(argv):
 
     try:
         opts, args = getopt.getopt(argv,'h',['train=', 'validation=','test=', \
-            'load_model=', 'distribution=', 'target=', 'help'])
+            'load_model=', 'load_weights=','distribution=', 'target=', 'help'])
     except getopt.GetoptError:
         print 'Error: Unknown parameter. %s' % USAGE_STRING
         sys.exit(2)
@@ -285,6 +290,8 @@ def main(argv):
             distribution_path = check_valid_path(a, 'distribution dataset')
         elif o == '--load_model':
             model_path = check_valid_path(a, 'model')
+        elif o == '--load_weights':
+            weights_path = check_valid_path(a, 'weights')
         elif o == '--target':
             valid_target = False
             for value in TARGETS:
@@ -316,9 +323,11 @@ def main(argv):
             dataset_name = test_path.rsplit('/', 1)[1].split('_test.json')[0]
             test_output_path = os.path.join(RESULTS_PATH, dataset_name)
 
-        if target == TARGETS[1] and model_path == None:
-            print 'Error: model path must be provided to execute the test. %s' \
-                % USAGE_STRING
+        if target == TARGETS[1] \
+            and (model_path == None or weights_path == None):
+            
+            print 'Error: model and weights paths must be provided to ' \
+             + 'execute the test. %s' % USAGE_STRING
             sys.exit(2)
 
     if distribution_path is None:
@@ -335,20 +344,20 @@ def main(argv):
     max_phrase_length = class_distribution['max_phrase_length']
     model_size = class_distribution['model_feature_length']
 
-    if target == TARGETS[1] and '.json' in model_path.rsplit('/', 1)[1]:
-        merged = load_model(Sequential(), model_path, 'json')
+    print "Model size: " + str(model_size)
+    print "Number of filters: " + str(NUM_FILTERS)
+    print "Batch size: " + str(BATCH_SIZE)
+    print "Number of epochs: " + str(NB_EPOCH)
+    print "Evaluation period: " + str(EVAL_PERIOD)
+    print 'Max. phrase length: ' + str(max_phrase_length)
+    print 'Building model...'
 
-    if merged is None:
-        print "Model size: " + str(model_size)
-        print "Number of filters: " + str(NUM_FILTERS)
-        print "Batch size: " + str(BATCH_SIZE)
-        print "Number of epochs: " + str(NB_EPOCH)
-        print "Evaluation period: " + str(EVAL_PERIOD)
-        print 'Max. phrase length: ' + str(max_phrase_length)
-        print 'Building model...'
-
+    if target == TARGETS[1]:
+        merged = load_model(model_path, weights_path)
+    else:
         merged = generate_model(model_size, max_phrase_length, num_categories)
-        merged.summary()
+    
+    merged.summary()
     
     # Execute training if target is train or all.
     if target == TARGETS[0] or target == TARGETS[2]:
@@ -357,11 +366,7 @@ def main(argv):
 
     # Execute test if target is test or all.
     if target == TARGETS[1] or target == TARGETS[2]:
-        if merged is None:
-            merged = load_model(merged, model_path, 'h5')
-
         test(test_path, merged, labels, max_phrase_length, test_output_path)
-
 
 if __name__ == '__main__':
     start_time = datetime.now()
