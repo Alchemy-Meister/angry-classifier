@@ -25,6 +25,7 @@ class EpochDrawer(object):
         if save_filename is not None:
             plt.savefig(save_filename)
         #plt.show()
+        ptl.clf()
 
 
 class ConfusionMatrixDrawer(object):
@@ -32,7 +33,7 @@ class ConfusionMatrixDrawer(object):
     This function prints and plots the confusion matrix.
     Normalization can be applied by setting `normalize=True`.
     """
-    def __init__(self, cm, classes, normalize=False, title='Confusion matrix', cmap=plt.cm.Blues):
+    def __init__(self, cm, classes, folder, str_id, normalize=False, title='Confusion matrix', cmap=plt.cm.Blues):
         plt.imshow(cm, interpolation='nearest', cmap=cmap)
         plt.title(title)
         plt.colorbar()
@@ -56,12 +57,11 @@ class ConfusionMatrixDrawer(object):
                      horizontalalignment="center",
                      color="white" if cm[i, j] > thresh else "black")
 
-        plt.tight_layout()
         plt.ylabel('True label')
         plt.xlabel('Predicted label')
-        plt.savefig('./' + filename + '.png')
-
-
+        plt.tight_layout()
+        plt.savefig(folder + '/' + str_id + '_' + filename + '.png')
+        plt.clf()
 
 if __name__ == '__main__':
     cnf_matrix =np.array([[ 328 , 1  , 23 ,  50 ,  39  ,  6  ,  7],[  18  ,463,   93,   31,   75,   36,    6],[  11,   26, 1286,  159,  158,   27,   18],[  34   ,17,  113, 5583,  579,   21,  225],[  29   ,37,  126,  466, 6486,   68,  122],[  16,   25,   47,   91,  211,  792,   20],[  19,   12,   64,  332,  367,   21, 1578]])

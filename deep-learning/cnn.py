@@ -28,8 +28,6 @@ STOP_CONDITION = 'val_loss'
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 CWD = os.getcwd()
-RESULTS_PATH = os.path.join(SCRIPT_DIR, 'results')
-MODEL_WEIGHT_PATH = os.path.join(RESULTS_PATH, 'model_weights')
 
 TARGETS = ['train', 'test', 'all']
 
@@ -38,8 +36,7 @@ USAGE_STRING = 'Usage: cnn.py [-h] [--help] --target=[train, test, all] ' \
     + '--validation=path_to_validation_word2vect ' \
     + '[--test=path_to_test_word2vec]' \
     + '[--distribution=path_to_distribution_file] ' \
-    + '[--load_model=path_to_model] [--load_weights=path_to_weights] ' \
-    + '[--output=save_model_path]'
+    + '[--load_model=path_to_model] [--load_weights=path_to_weights]'
 
 def json_numpy_obj_hook(dct):
     """Decodes a previously encoded numpy ndarray with proper shape and dtype.
@@ -128,10 +125,11 @@ def generate_model(model_size, max_phrase_length, num_categories):
 
     return merged
 
-def save_model(model, output):
+def save_model(model, model_output_path, model_weights_output_path):
     json_string = model.to_json()
-    open(output + '.json', 'w').write(json_string)
-    model.save_weights(output + '.h5', overwrite=True)
+    open(model_output_path + '/model.json', 'w').write(json_string)
+    model.save_weights(model_weights_output_path + '/model_weights.h5', \
+        overwrite=True)
 
 def load_model(model_path, weights_path):
     model_file = open(model_path, 'r')
@@ -171,7 +169,7 @@ def check_valid_dir(dir_name):
     return dir_name
 
 def train(train_path, validation_path, model, labels, max_phrase_length, \
-    output_path):
+    model_output_path, model_weights_output_path):
     
     X_train, y_train = prepare_samples(train_path, labels, max_phrase_length)
     X_validation, y_validation = prepare_samples(validation_path, labels, \
@@ -180,7 +178,7 @@ def train(train_path, validation_path, model, labels, max_phrase_length, \
     early_stopping = EarlyStopping(monitor=STOP_CONDITION, \
         min_delta=0, patience=PATIENCE, verbose=0, mode='auto')
     #TODO:Check how save_best_only works
-    checkpoint = ModelCheckpoint(MODEL_WEIGHT_PATH + '/{epoch:02d}-{' \
+    checkpoint = ModelCheckpoint(model_weights_output_path + '/{epoch:02d}-{' \
         + STOP_CONDITION + ':.2f}.hdf5', monitor=STOP_CONDITION, verbose=0, \
         save_best_only=True, save_weights_only=False, mode='auto')
 
@@ -195,7 +193,7 @@ def train(train_path, validation_path, model, labels, max_phrase_length, \
     print 'Saving model...'
     sys.stdout.flush()
 
-    save_model(model, output_path)
+    save_model(model, model_output_path, model_weights_output_path)
     print 'LLAP'
 
 def test(test_path, model, labels, max_phrase_length, output_path):
@@ -214,13 +212,18 @@ def test(test_path, model, labels, max_phrase_length, output_path):
     y_raw_test = []
     for y1 in y_test:
         y_raw_test.append(find_1(y1))
-    
+
+    t = time.localtime()
+    timestamp = time.strftime('%b-%d-%Y_%H%M', t)
+
     #Y_true, y_predict
     conf_matrix = confusion_matrix(y_raw_test, y_predict)
-    ConfusionMatrixDrawer(conf_matrix, classes=labels, \
-        title='Confusion matrix, without normalization')
+    ConfusionMatrixDrawer(conf_matrix, classes=labels, str_id=timestamp, \
+        title='Confusion matrix, without normalization', folder=output_path)
     ConfusionMatrixDrawer(conf_matrix, classes=labels, normalize=True, \
-        title='Normalized confusion matrix')
+        title='Normalized confusion matrix', folder=output_path, \
+        str_id=timestamp)
+
     print conf_matrix
     
     acc = accuracy_score(y_raw_test, y_predict)
@@ -242,28 +245,23 @@ def test(test_path, model, labels, max_phrase_length, output_path):
     results['f1_micro'] = f1_micro
     results['acc'] = acc
 
-    t = time.localtime()
-    timestamp = time.strftime('%b-%d-%Y_%H%M', t)
-
-    with codecs.open(output_path + '_result-' + timestamp, 'w', \
+    with codecs.open(output_path + '/' + timestamp, 'w', \
         encoding='utf-8') as file:
 
         file.write(ujson.dumps(results, indent=4))
 
 def main(argv):
-
-    # check if the output directories exist and if not creates them.
-    check_valid_dir(RESULTS_PATH)
-    check_valid_dir(MODEL_WEIGHT_PATH)
-
     train_path = None
     validation_path = None
     test_path = None
     distribution_path = None
     model_path = None
     weights_path = None
-    train_output_path = None
-    test_output_path = None
+
+    dataset_result_output_path = None
+    model_output_path = None
+    model_weights_output_path = None
+    results_output_path = None
 
     target = TARGETS[2]
     merged = None
@@ -312,8 +310,16 @@ def main(argv):
             sys.exit(2)
         else:
             dataset_name = train_path.rsplit('/', 1)[1].split('_train.json')[0]
-            train_output_path = os.path.join(MODEL_WEIGHT_PATH, dataset_name)
-            test_output_path = os.path.join(RESULTS_PATH, dataset_name)
+            dataset_result_output_path = os.path.join(SCRIPT_DIR, \
+                dataset_name)
+            check_valid_dir(dataset_result_output_path)
+            
+            model_output_path = os.path.join(dataset_result_output_path, \
+                'model')
+            check_valid_dir(model_output_path)
+            model_weights_output_path = os.path.join( \
+                dataset_result_output_path, 'model_weights' )
+            check_valid_dir(model_weights_output_path)
 
     if target == TARGETS[1] or target == TARGETS[2]:
         if test_path == None:
@@ -321,7 +327,9 @@ def main(argv):
             sys.exit(2)
         elif dataset_name is None:
             dataset_name = test_path.rsplit('/', 1)[1].split('_test.json')[0]
-            test_output_path = os.path.join(RESULTS_PATH, dataset_name)
+            dataset_result_output_path = os.path.join(SCRIPT_DIR, \
+                dataset_name)
+            check_valid_dir(dataset_result_output_path)
 
         if target == TARGETS[1] \
             and (model_path == None or weights_path == None):
@@ -329,6 +337,9 @@ def main(argv):
             print 'Error: model and weights paths must be provided to ' \
              + 'execute the test. %s' % USAGE_STRING
             sys.exit(2)
+
+    results_output_path = os.path.join(dataset_result_output_path, 'results')
+    check_valid_dir(results_output_path)
 
     if distribution_path is None:
         if train_path is not None:
@@ -362,11 +373,11 @@ def main(argv):
     # Execute training if target is train or all.
     if target == TARGETS[0] or target == TARGETS[2]:
         train(train_path, validation_path, merged, labels, max_phrase_length, \
-            train_output_path)
+            model_output_path, model_weights_output_path)
 
     # Execute test if target is test or all.
     if target == TARGETS[1] or target == TARGETS[2]:
-        test(test_path, merged, labels, max_phrase_length, test_output_path)
+        test(test_path, merged, labels, max_phrase_length, results_output_path)
 
 if __name__ == '__main__':
     start_time = datetime.now()
