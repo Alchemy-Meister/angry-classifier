@@ -1,18 +1,7 @@
 {
     "map": {
-        "love":"no_irony",
-        "relief":"no_irony",
-        "neutral":"no_irony",
-        "sadness":"no_irony",
-        "empty":"no_irony",
-        "surprise":"no_irony",
-        "enthusiasm":"no_irony",
-        "happiness":"no_irony",
-        "worry":"no_irony",
-        "boredom":"no_irony",
-        "joy":"no_irony",
-        "thankfulness":"no_irony",
-        "fear":"no_irony"
+        "joy":"fun",
+        "fear": "worry"
     },
     "remove": [
         "hate",

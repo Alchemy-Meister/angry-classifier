@@ -65,8 +65,6 @@ def main(argv):
     FILE_PATH = str(argv[0]).strip()
     OUTPUT_FILENAME = FILE_PATH.split('.')[0]
 
-    split_path = OUTPUT_FILENAME.split('/')
-
     # OAuth authentication
     auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
     auth.set_access_token(ACCESS_TOKEN, ACCESS_TOKEN_SECRET)

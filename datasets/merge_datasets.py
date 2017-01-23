@@ -132,6 +132,10 @@ def main(argv):
     hashtag_num = len(hashtags)
 
     if binary_classification:
+        if mapper is None:
+            print 'Error: Unable to create binary dataset without the mapper.'
+            sys.exit(2)
+        
         binary_label = mapper['binary']
 
         # Remove target labels (hashtags) from tweet content.
@@ -149,13 +153,13 @@ def main(argv):
         negative_tweets = dataset[(dataset.label != binary_label)].copy()
 
         if len(positive_tweets.index) == 0 or len(negative_tweets.index) == 0:
-            print 'Error: Unable to perform binary dataset for the ' \
+            print 'Error: Unable to create binary dataset for the ' \
                 + binary_label + ' target class. Need at least two distinct ' \
                 + 'labels.'
             sys.exit(2)
 
         # Replace sentiment labels for binary classification
-        positive_tweets[CSV_COLUMNS[1]] = binary_label
+        # positive_tweets[CSV_COLUMNS[1]] = binary_label
         negative_tweets[CSV_COLUMNS[1]] = 'no_' + binary_label
 
         # Select a random subset of len(positive_tweets) without replacement.
