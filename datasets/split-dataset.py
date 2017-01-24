@@ -16,19 +16,14 @@ del COMPULSORY_COLUMNS[2]
 
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 CWD = os.getcwd()
-OUTPUT_DIR = os.path.join(DIR_PATH, 'splitted')
+OUTPUT_DIR = os.path.join(DIR_PATH, 'split')
 BINARY_TAG = 'binary_'
-OUTPUT_FILENAMES = ['splitted_dataset_1.csv', 'splitted_dataset_2.csv']
+OUTPUT_FILENAMES = ['dataset_split_1.csv', 'dataset_split_2.csv']
 
 NON_ENGLISH_CHARS = ('¿','À','Á','Â','Ã','Ä','Å','Æ','Ç','È','É','Ê','Ë','Ì', \
     'Í','Î','Ï','Ð','Ñ', 'Ò','Ó','Ô','Õ','Ö','×','Ø','Ù','Ú','Û','Ü','Ý','Þ', \
     'ß','à','á','â','ã','ä','å','æ','ç','è','é','ê','ë','ì','í','î','ï','ð', \
     'ñ','ò','ó','ô','õ','ö','ø','ù','ú','û','ü','ý','þ','ÿ')
-
-def path_num_checker(path_num):
-    if path_num < 2:
-        print 'ERROR: at least two dataset paths must be provided.'
-        sys.exit(2)
 
 def check_valid_path(path, desc):
     if not os.path.isabs(path):
@@ -85,6 +80,7 @@ def main(argv):
             for mapper in a.split(','):
                 if mapper != '':
                     mappers.append(check_valid_path(mapper, 'mapper'))
+            mappers_len = len(mappers)
         elif o == '--output_filenames':
             global  OUTPUT_FILENAME
             OUTPUT_FILENAMES = []
@@ -119,6 +115,15 @@ def main(argv):
     for non_en_char in NON_ENGLISH_CHARS:
         df = df.drop(df[df.content.str.contains(non_en_char)].index)
 
+    # Remove target labels (hashtags) from tweet content.
+    for hastag in hashtags:
+        df[CSV_COLUMNS[3]] = df[CSV_COLUMNS[3]].str.replace(hastag, ' ', \
+            case=False)
+
+    # Trim tweet text if needed.
+    if len(hashtags) > 0:
+        df[CSV_COLUMNS[3]] = df[CSV_COLUMNS[3]].str.strip()
+
     for index, mapper_path in enumerate(mappers):
         mappers[index] = ujson.load(open(mapper_path,'r'))
 
@@ -127,8 +132,6 @@ def main(argv):
             print 'Error: Unable to split into a binary datasets without' \
                 + 'the mapper.'
             sys.exit(2)
-
-        mappers_len = len(mappers)
 
         positive_tweets_dfs = [None] * mappers_len
         positive_labels = []
@@ -183,11 +186,54 @@ def main(argv):
                     ~negative_tweets_df[CSV_COLUMNS[1]] \
                     .isin(remove_labels[index])].copy()
 
-                negative_tweets_dfs[index][CSV_COLUMNS[1]] = 'no_' \
-                    + positive_labels[index]
+            negative_tweets_dfs[index][CSV_COLUMNS[1]] = 'no_' \
+                + positive_labels[index]
 
-                print negative_tweets_dfs[index]
+            current_neg_tweets_len = len(negative_tweets_dfs[index].index)
 
+            if  current_neg_tweets_len < positive_tweets_length[index]:
+                print 'Error: Couldn\'t create normalized dataset for ' \
+                    + positive_labels[index] + ', not enough negative tweets'
+                sys.exit(2)
+
+            if index == 0:
+                negative_tweets_dfs[index] = negative_tweets_dfs[index].head( \
+                    positive_tweets_length[index] ).copy()
+            else:
+                columns = list(negative_tweets_dfs[index].columns.values)
+                columns.remove(COMPULSORY_COLUMNS[1])
+
+                common = negative_tweets_dfs[index].merge( \
+                    negative_tweets_dfs[index - 1], on=columns )
+
+                negative_tweets_dfs[index] = negative_tweets_dfs[index] \
+                    [~negative_tweets_dfs[index].index.isin(common.index)] \
+                    .copy().head(positive_tweets_length[index]).copy()
+
+                if len(negative_tweets_dfs[index].index) \
+                    < positive_tweets_length[index]:
+
+                    print 'Error: Couldn\'t create normalized dataset for ' \
+                        + positive_labels[index] + ', not enough unique ' \
+                        + 'negative tweets'
+                    sys.exit(2)
+
+            positive_tweets_dfs[index] = positive_tweets_dfs[index] \
+                .append(negative_tweets_dfs[index], ignore_index=True)
+            positive_tweets_dfs[index] = positive_tweets_dfs[index] \
+                .sample(frac=1).reset_index(drop=True)
+
+        del negative_tweets_dfs
+        del positive_labels
+        del remove_labels
+
+        for index, binary_dataset in enumerate(positive_tweets_dfs):
+            # Serialize dataframe.
+            binary_dataset.to_csv(path_or_buf=os.path.join(OUTPUT_DIR, \
+                BINARY_TAG + OUTPUT_FILENAMES[index]), header=CSV_COLUMNS, \
+                index=False, encoding='utf-8')
+    else:
+        
 
 if __name__ == "__main__":
     main(sys.argv[1:])
