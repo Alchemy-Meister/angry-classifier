@@ -41,6 +41,20 @@ USAGE_STRING = 'Usage: dataset_w2v.py ' \
             + '[--validation] [--spell_check] [--size=] ] [--split_ratio=] ' \
             + '[--help] path_to_dataset'
 
+def check_valid_dir(dir_name):
+    if not os.path.isabs(dir_name):
+        dir_name = os.path.join(CWD, dir_name)
+
+    if not os.path.exists(dir_name):
+        try:
+            os.makedirs(dir_name)
+        except:
+            print 'Error: Output directory file could not be created.'
+            print dir_name
+            sys.exit(2)
+
+    return dir_name
+
 def process_sample(model, sample, list_index, max_word_per_sentence, spell):
     num_words = len(sample[list_index]['words'])
 
@@ -169,6 +183,7 @@ def main(argv):
             dataset_path = source_path[0]
 
             # Generate output dir path.
+            check_valid_dir(os.path.join(dataset_path, 'json/'))
             output_path = os.path.join(dataset_path, 'json/' \
                 + source_path[1].rsplit('.csv')[0])
 
