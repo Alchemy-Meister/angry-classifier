@@ -25,6 +25,13 @@ NON_ENGLISH_CHARS = ('¿','À','Á','Â','Ã','Ä','Å','Æ','Ç','È','É','Ê'
     'ß','à','á','â','ã','ä','å','æ','ç','è','é','ê','ë','ì','í','î','ï','ð', \
     'ñ','ò','ó','ô','õ','ö','ø','ù','ú','û','ü','ý','þ','ÿ')
 
+USAGE_STRING = 'ERROR: Unknown parameter. Usage: split_datasets.py [-b] ' \
+            + '[--binary_classification] --size_ratios=0.7,0.15,0.15' \
+            + '--mappers=path_to_mapper_1,path_to_mapper_2 ' \
+            + '--remove-hashtags=tag1,tag2,tagN '\
+            + 'output_filenames=output_name_1.csv,output_name_N.csv ' \
+            + 'path_to_dataset'
+
 def check_valid_path(path, desc):
     if not os.path.isabs(path):
         # Make relative path absolute.
@@ -64,12 +71,7 @@ def main(argv):
             'mappers=', 'remove-hashtags=', 'output_filenames=', \
             'size_ratios='])
     except getopt.GetoptError:
-        print 'ERROR: Unknown parameter. Usage: split_datasets.py [-b] ' \
-            + '[--binary_classification] --size_ratios=0.7,0.15,0.15' \
-            + '--mappers=path_to_mapper_1,path_to_mapper_2 ' \
-            + '--remove-hashtags=tag1,tag2,tagN '\
-            + 'output_filenames=output_name_1.csv,output_name_N.csv ' \
-            + 'path_to_dataset'
+        print USAGE_STRING
         sys.exit(2)
 
     for o, a in opts:
@@ -95,11 +97,22 @@ def main(argv):
             size_ratios = []
             for size_ratio in a.split(','):
                 if size_ratio != '':
-                    size_ratios.append(size_ratio)
+                    try:
+                        size_ratios.append(float(size_ratio))
+                    except:
+                        print 'Error: invalid size_ratio format. %s' \
+                            % USAGE_STRING
+                        sys.exit(2)
 
     if len(args) != 1:
         print 'Error: A unique path to dataset must be provided.'
         sys.exit(2)
+
+    size_ratios_length = len(size_ratios)
+
+    if len(OUTPUT_FILENAMES) != size_ratios_length:
+        print 'Error: Number of output filenames and size ratio doesn\'t match.'
+        sys.exit(2) 
 
     dataset_path = check_valid_path(args[0], 'dataset')
 
@@ -233,7 +246,30 @@ def main(argv):
                 BINARY_TAG + OUTPUT_FILENAMES[index]), header=CSV_COLUMNS, \
                 index=False, encoding='utf-8')
     else:
-        
+        ratio_validation = float(0)
+        df_split_values = [0] * size_ratios_length
+        df_length = len(df.index)
+
+        for index, size_ratio in enumerate(size_ratios):
+            ratio_validation += size_ratio
+            df_split_values[index] = df_length * size_ratio
+
+        if np.testing.assert_almost_equal(ratio_validation, 1.0):
+            print 'Error: the sum of all split size ratios much be equal to 1.'
+            sys.exit(2)
+
+        split_part = None
+
+        for index, split_size in enumerate(df_split_values):
+            if index < size_ratios_length - 1:
+                split_part = df.head(int(split_size)).copy()
+                df.drop(split_part.index, inplace=True)
+            else:
+                split_part = df
+
+            split_part.to_csv(path_or_buf=os.path.join(OUTPUT_DIR, \
+                OUTPUT_FILENAMES[index]), header=CSV_COLUMNS, index=False, \
+                encoding='utf-8')
 
 if __name__ == "__main__":
     main(sys.argv[1:])

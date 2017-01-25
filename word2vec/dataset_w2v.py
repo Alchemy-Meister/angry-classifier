@@ -38,8 +38,8 @@ CLEAN_WORD_LIST = ['URL', 'MENTION']
 
 USAGE_STRING = 'Usage: dataset_w2v.py ' \
             + '[-d] [-i] [-v] [-s] [-h] [--sample_division] [--indent] ' \
-            + '[--validation] [--spell_check] [--size=] [--help] ' \
-            + 'path_to_dataset'
+            + '[--validation] [--spell_check] [--size=] ] [--split_ratio=] ' \
+            + '[--help] path_to_dataset'
 
 def process_sample(model, sample, list_index, max_word_per_sentence, spell):
     num_words = len(sample[list_index]['words'])
@@ -101,11 +101,13 @@ def main(argv):
 
     model_rel_path = '/model/GoogleNews-vectors-negative300.bin'
 
+    split_ratios = []
+    split_ratios_lenght = 0
     output_path = None
 
     try:
         opts, args = getopt.getopt(argv,'divsh',['sample_division', 'indent', \
-            'validation', 'size=', 'spell_check', 'help'])
+            'validation', 'size=', 'split_ratio=', 'spell_check', 'help'])
     except getopt.GetoptError:
         print 'ERROR: Unknown parameter. %s' % USAGE_STRING 
         sys.exit(2)
@@ -130,8 +132,26 @@ def main(argv):
                 size = int(a)
             except:
                 print 'Error: size argument must be an integer.'
+        elif o == '--split_ratio':
+            for split_ratio in a.split(','):
+                if split_ratio != '':
+                    try:
+                        split_ratios.append(float(split_ratio))
+                    except Exception, e:
+                        print 'Error: invalid split_ratio format. %s' \
+                            % USAGE_STRING
+                        sys.exit(2)
+            split_ratios_lenght = len(split_ratios)
         elif o == '-s' or o == '--spell_check':
             spell_check = True
+
+    if split_ratios_lenght != 0:
+        if validation and split_ratios_lenght != 3:
+            print 'Error: 3 split ratios must be provided on validation.'
+            sys.exit(2)
+        elif divide and not validation and split_ratios_lenght != 2:
+            print 'Error: 2 split ratios must be provided on sample division.'
+            sys.exit(2)
 
     if len(args) != 1:
         print 'Error: Dataset path must be provided.'
@@ -195,12 +215,18 @@ def main(argv):
     else:
         df_length = len(df.index)
 
-    # Designates 70% of the dataset for training file.
-    train_length = ceil(df_length * 0.7)
+    if split_ratios_lenght == 0:
+        # Designates 70% of the dataset for training file.
+        train_length = ceil(df_length * 0.7)
 
-    # Designates 15% of the dataset for validation and testing.
-    if validation:
-        test_start = (train_length + (df_length - train_length) / 2 ) - 1
+        # Designates 15% of the dataset for validation and testing.
+        if validation:
+            test_start = (train_length + (df_length - train_length) / 2 ) - 1
+    else:
+        train_length = round(df_length * split_ratios[0])
+
+        if validation:
+            test_start = train_length + round(df_length * split_ratios[1])
 
     max_word_per_sentence = 0
 
