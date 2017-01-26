@@ -7,7 +7,7 @@ from datetime import datetime
 import getopt
 import HTMLParser
 import logging
-from math import ceil
+from math import floor
 from nltk.corpus import stopwords
 from nltk.tokenize import RegexpTokenizer
 import numpy as np
@@ -38,8 +38,8 @@ CLEAN_WORD_LIST = ['URL', 'MENTION']
 
 USAGE_STRING = 'Usage: dataset_w2v.py ' \
             + '[-d] [-i] [-v] [-s] [-h] [--sample_division] [--indent] ' \
-            + '[--validation] [--spell_check] [--size=] ] [--split_ratio=] ' \
-            + '[--help] path_to_dataset'
+            + '[--validation] [--spell_check] [--size=] [--split_ratio=] ' \
+            + '[--max_phrase_length=] [--help] path_to_dataset'
 
 def check_valid_dir(dir_name):
     if not os.path.isabs(dir_name):
@@ -111,6 +111,7 @@ def main(argv):
     validation = False
     spell_check = False
     size = None
+    force_max_phrase_length = None
     task_description = 'Calculating Word2Vec values'
 
     model_rel_path = '/model/GoogleNews-vectors-negative300.bin'
@@ -121,7 +122,8 @@ def main(argv):
 
     try:
         opts, args = getopt.getopt(argv,'divsh',['sample_division', 'indent', \
-            'validation', 'size=', 'split_ratio=', 'spell_check', 'help'])
+            'validation', 'size=', 'split_ratio=', 'spell_check', 'help', \
+            'max_phrase_length='])
     except getopt.GetoptError:
         print 'ERROR: Unknown parameter. %s' % USAGE_STRING 
         sys.exit(2)
@@ -141,11 +143,18 @@ def main(argv):
             task_description = 'Calculating Word2Vec train values'
             task2_description = 'Calculating Word2Vec validation values'
             validation = True
+        elif o == '--max_phrase_length':
+            try:
+                force_max_phrase_length = int(a)
+            except:
+                print 'Error: max phrease length argument must be an integer.'
+                sys.exit(2)
         elif o == '--size':
             try:
                 size = int(a)
             except:
                 print 'Error: size argument must be an integer.'
+                sys.exit(2)
         elif o == '--split_ratio':
             for split_ratio in a.split(','):
                 if split_ratio != '':
@@ -238,10 +247,11 @@ def main(argv):
         if validation:
             test_start = (train_length + (df_length - train_length) / 2 ) - 1
     else:
-        train_length = round(df_length * split_ratios[0])
+        train_length = round(df_length * split_ratios[0]) -1
 
         if validation:
-            test_start = train_length + round(df_length * split_ratios[1])
+            test_start = train_length \
+                + floor(df_length * split_ratios[1]) - 1
 
     max_word_per_sentence = 0
 
@@ -354,6 +364,9 @@ def main(argv):
         # Update index.
         preprocess_index += 1
 
+    if force_max_phrase_length != None:
+        max_word_per_sentence = force_max_phrase_length
+
     distribution['max_phrase_length'] = max_word_per_sentence
     distribution['model_feature_length'] = NUM_MODEL_FEATURES
 
@@ -382,6 +395,8 @@ def main(argv):
     # Release memory.
     del model
     del df
+
+    print distribution
 
     serialization_start_time = datetime.now()
 
