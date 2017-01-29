@@ -27,11 +27,18 @@ TARGETS = ['train', 'test', 'all']
 
 USAGE_STRING = 'Usage: cnn.py [-h] [--help] ' \
     + '[--dataset=path_to_original_dataset]' \
-    + '[--word2vec_dataset=path_to_word2vec_dataset'
     + '[--anger_dir=path_to_anger_dir] ' \
     + '[--anger_model_weights=anger_weights_filename] ' \
+    + '[--anger_distribution=anger_distribution_path]' \
     + '[--irony_dir=path_to_irony_dir] ' \
     + '[--irony_model_weights=anger_weights_filename] ' \
+    + '[--irony-distribution=irony_distribution_path]'
+
+CSV_COLUMNS = ['tweet_id', 'label', 'author', 'content']
+
+# Author column is not required.
+COMPULSORY_COLUMNS = list(CSV_COLUMNS)
+del COMPULSORY_COLUMNS[2]
 
 def json_numpy_obj_hook(dct):
     """Decodes a previously encoded numpy ndarray with proper shape and dtype.
@@ -44,16 +51,13 @@ def json_numpy_obj_hook(dct):
         return np.frombuffer(data, dct['dtype']).reshape(dct['shape'])
     return dct
 
-def prepare_samples(piece_path, labels, max_phrase_length):
+def prepare_samples(piece_path, max_phrase_length):
     X = []
-    y = []
     with open(piece_path, 'r') as piece:
         program = json.load(piece, object_hook=json_numpy_obj_hook)
-       
-        encoder = one_hot_encoder(labels)
+
         for phrase in program:
             X.append(np.array(phrase['word2vec']))
-            y.append(encoder[phrase['label']])
     X = np.array(X)
 
     if K.image_dim_ordering() == 'th':
@@ -62,7 +66,7 @@ def prepare_samples(piece_path, labels, max_phrase_length):
     else:
         X = X.reshape(X.shape[0], max_phrase_length, 300, 1)
         #input_shape = (img_rows, img_cols, 1)
-    return X, y
+    return X
 
 def one_hot_encoder(total_classes):
     encoder = {}
@@ -172,18 +176,22 @@ def test(test_path, model, labels, max_phrase_length, output_path):
 
 def main(argv):
     dataset_path = None
+    word2vec_dataset_path = None
 
     classifiers_name_str = ['anger', 'irony']
-    classifiers_attr_str = ['dir', 'model', 'weights']
+    classifiers_attr_str = ['dir', 'model', 'weights', 'distribution']
 
     classifiers = dict()
     for classifier_name in classifiers_name_str:
         classifiers[classifier_name] = dict.fromkeys(classifiers_attr_str, None)
 
+    classifiers_length = len(classifiers.keys())
+    max_phrase_length = None
+
     try:
         opts, args = getopt.getopt(argv,'h',['dataset=', 'anger_dir=', \
-            'anger_weights_filename=', 'irony_dir=', \
-            'irony_weights_filename=', 'help'])
+            'anger_weights_filename=', 'anger_distribution=','irony_dir=', \
+            'irony_weights_filename=', 'irony_distribution=', 'help'])
     except getopt.GetoptError:
         print 'Error: Unknown parameter. %s' % USAGE_STRING
         sys.exit(2)
@@ -194,6 +202,11 @@ def main(argv):
             sys.exit(0)
         if o == '--dataset':
             dataset_path = check_valid_path(a, 'dataset')
+            dataset_split_path = dataset_path.rsplit('/' ,1)
+            word2vec_dataset_path = check_valid_path(dataset_split_path[0] \
+                + '/json/' + dataset_split_path[1].split('.csv')[0] + '.json', \
+                'word2vec dataset')
+
         elif o == '--anger_dir':
             class_dir = check_valid_dir(a)
             classifiers[classifiers_name_str[0]][classifiers_attr_str[0]] \
@@ -203,6 +216,9 @@ def main(argv):
         elif o == '--anger_weights_filename':
             classifiers[classifiers_name_str[0]][classifiers_attr_str[2]] \
                 = a
+        elif o == '--anger_distribution':
+            classifiers[classifiers_name_str[0]][classifiers_attr_str[3]] \
+                = check_valid_path(a, 'anger distribution')
         elif o == '--irony_dir':
             class_dir = check_valid_dir(a)
             classifiers[classifiers_name_str[1]][classifiers_attr_str[0]] \
@@ -212,10 +228,14 @@ def main(argv):
         elif o == '--irony_weights_filename':
             classifiers[classifiers_name_str[1]][classifiers_attr_str[2]] \
                 = a
+        elif o == '--irony_distribution':
+            classifiers[classifiers_name_str[1]][classifiers_attr_str[3]] \
+                = check_valid_path(a, 'irony distribution')
 
     if dataset_path == None:
         print 'Error, dataset path is required.\n %s' % USAGE_STRING
         sys.exit(2)
+
     elif classifiers[classifiers_name_str[0]][classifiers_attr_str[0]] == None \
         or classifiers[classifiers_name_str[1]][classifiers_attr_str[0]] \
         == None:
@@ -223,15 +243,41 @@ def main(argv):
         print 'Error, anger and irony directories are required.\n %s' \
             % USAGE_STRING
         sys.exit(2)
-    elif classifiers[classifiers_name_str[0]][classifiers_attr_str[0]] == None \
-        or classifiers[classifiers_name_str[1]][classifiers_attr_str[0]] \
+    elif classifiers[classifiers_name_str[0]][classifiers_attr_str[2]] == None \
+        or classifiers[classifiers_name_str[1]][classifiers_attr_str[2]] \
         == None:
         
         print 'Error, anger and irony model weights filename are required.\n' \
             % USAGE_STRING
         sys.exit(2)
 
-    #TODO Process dataset variable
+    elif classifiers[classifiers_name_str[0]][classifiers_attr_str[3]] == None \
+        or classifiers[classifiers_name_str[1]][classifiers_attr_str[3]] \
+        == None:
+        
+        print 'Error, anger and irony distribution paths are required.\n' \
+            % USAGE_STRING
+        sys.exit(2)
+    else:
+        for classifier_name, classifier_dict in classifiers.iteritems():
+            classifier_dict[classifiers_attr_str[3]] = \
+                ujson.load(open(classifier_dict[classifiers_attr_str[3]], 'r'))
+
+            if max_phrase_length is None:
+                max_phrase_length = classifier_dict[classifiers_attr_str[3]] \
+                    ['max_phrase_length']
+            else:
+                if max_phrase_length != classifier_dict[ \
+                    classifiers_attr_str[3] ]['max_phrase_length']:
+
+                    print 'Error, both classifiers must be pre-trained with '
+                    + 'same max_phrase_length.'
+                    sys.exit(2)
+
+    df = pd.read_csv(dataset_path, header=0, \
+        dtype={COMPULSORY_COLUMNS[0]: np.int64})
+
+    X_predict = prepare_samples(word2vec_dataset_path, max_phrase_length)
 
     for classifier_name, classifier_dict in classifiers.iteritems():
 
@@ -243,8 +289,25 @@ def main(argv):
         model = load_model(classifier_dict[classifiers_attr_str[1]], \
             classifier_dict[classifiers_attr_str[2]])
 
-        
+        y_predict = model.predict([X_predict, X_predict, X_predict])
+        y_predict = probas_to_classes(y_predict)
 
+        df[classifier_name] = y_predict
+
+        labels = classifier_dict[classifiers_attr_str[3]]['classes'].keys()
+
+        for index in xrange(len(labels)):
+            df.loc[df[classifier_name] == index, classifier_name] \
+                = labels[index]
+
+        # print df[df[classifier_name] == df[COMPULSORY_COLUMNS[1]]]
+
+        print len(df[df[classifier_name] == df[COMPULSORY_COLUMNS[1]]].index)
+
+    print len(df.index)
+    # print df
+
+    sys.exit(0)
 
 
     if target == TARGETS[0] or target == TARGETS[2]:

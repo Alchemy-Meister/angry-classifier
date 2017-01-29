@@ -7,7 +7,7 @@ from datetime import datetime
 import getopt
 import HTMLParser
 import logging
-from math import floor
+from math import floor, ceil
 from nltk.corpus import stopwords
 from nltk.tokenize import RegexpTokenizer
 import numpy as np
@@ -40,6 +40,15 @@ USAGE_STRING = 'Usage: dataset_w2v.py ' \
             + '[-d] [-i] [-v] [-s] [-h] [--sample_division] [--indent] ' \
             + '[--validation] [--spell_check] [--size=] [--split_ratio=] ' \
             + '[--max_phrase_length=] [--help] path_to_dataset'
+
+CSV_COLUMNS = ['tweet_id', 'label', 'author', 'content']
+
+# Author column is not required.
+COMPULSORY_COLUMNS = list(CSV_COLUMNS)
+del COMPULSORY_COLUMNS[2]
+
+LOAD_COLUMNS = list(COMPULSORY_COLUMNS)
+del LOAD_COLUMNS[1]
 
 def check_valid_dir(dir_name):
     if not os.path.isabs(dir_name):
@@ -200,7 +209,7 @@ def main(argv):
                 output_path = output_path + '_spell'
 
             # Loads CSV into dataframe.
-            df = pd.read_csv(args, usecols=[1,3], header=0)
+            df = pd.read_csv(args, header=0, usecols=LOAD_COLUMNS)
         else:
             print 'Error: Invalid dataset file.'
             sys.exit(2)
@@ -395,8 +404,6 @@ def main(argv):
     # Release memory.
     del model
     del df
-
-    print distribution
 
     serialization_start_time = datetime.now()
 

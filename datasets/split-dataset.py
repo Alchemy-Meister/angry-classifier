@@ -116,7 +116,8 @@ def main(argv):
 
     dataset_path = check_valid_path(args[0], 'dataset')
 
-    df = pd.read_csv(dataset_path, header=0, dtype={'tweet_id': np.int64})
+    df = pd.read_csv(dataset_path, header=0, \
+        dtype={COMPULSORY_COLUMNS[0]: np.int64})
 
     for column in COMPULSORY_COLUMNS:
         if column not in df.columns:
