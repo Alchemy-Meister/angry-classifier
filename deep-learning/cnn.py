@@ -54,8 +54,6 @@ def prepare_samples(piece_path, labels, max_phrase_length):
     y = []
     with open(piece_path, 'r') as piece:
         program = json.load(piece, object_hook=json_numpy_obj_hook)
-
-        print len(program)
        
         encoder = one_hot_encoder(labels)
         for phrase in program:

@@ -178,8 +178,16 @@ def main(argv):
     dataset_path = None
     word2vec_dataset_path = None
 
+    result_col = 'classification'
     classifiers_name_str = ['anger', 'irony']
     classifiers_attr_str = ['dir', 'model', 'weights', 'distribution']
+    
+    matrix_classes = {
+        'explicit anger': ['anger', 'no_irony'],
+        'repressed anger': ['anger', 'irony'],
+        'normal': ['no_anger', 'no_irony'],
+        'irony': ['no_anger', 'irony']
+        }
 
     classifiers = dict()
     for classifier_name in classifiers_name_str:
@@ -187,6 +195,7 @@ def main(argv):
 
     classifiers_length = len(classifiers.keys())
     max_phrase_length = None
+    predic_distribution = None
 
     try:
         opts, args = getopt.getopt(argv,'h',['dataset=', 'anger_dir=', \
@@ -206,6 +215,9 @@ def main(argv):
             word2vec_dataset_path = check_valid_path(dataset_split_path[0] \
                 + '/json/' + dataset_split_path[1].split('.csv')[0] + '.json', \
                 'word2vec dataset')
+            predic_distribution = ujson.load( open(check_valid_path( \
+                word2vec_dataset_path.split('.json')[0] \
+                + '_distribution.json', 'predict distribution'), 'r') )
 
         elif o == '--anger_dir':
             class_dir = check_valid_dir(a)
@@ -253,9 +265,9 @@ def main(argv):
 
     elif classifiers[classifiers_name_str[0]][classifiers_attr_str[3]] == None \
         or classifiers[classifiers_name_str[1]][classifiers_attr_str[3]] \
-        == None:
+        == None or predic_distribution == None:
         
-        print 'Error, anger and irony distribution paths are required.\n' \
+        print 'Error, anger, irony predict distribution paths are required.\n' \
             % USAGE_STRING
         sys.exit(2)
     else:
@@ -279,6 +291,8 @@ def main(argv):
 
     X_predict = prepare_samples(word2vec_dataset_path, max_phrase_length)
 
+    predicted_distribution = {'class': {}, 'category': {}}
+
     for classifier_name, classifier_dict in classifiers.iteritems():
 
         # Load model weights path into the dictionary.
@@ -300,12 +314,44 @@ def main(argv):
             df.loc[df[classifier_name] == index, classifier_name] \
                 = labels[index]
 
-        # print df[df[classifier_name] == df[COMPULSORY_COLUMNS[1]]]
+            predicted_distribution['class'][labels[index]] = len(df[ 
+                (df[COMPULSORY_COLUMNS[1]] == labels[index]) \
+                & (df[classifier_name] == df[COMPULSORY_COLUMNS[1]]) ].index)
 
-        print len(df[df[classifier_name] == df[COMPULSORY_COLUMNS[1]]].index)
+        predicted_distribution['category'][classifier_name] = \
+            len(df[df[classifier_name] == df[COMPULSORY_COLUMNS[1]]].index)
 
-    print len(df.index)
-    # print df
+
+    for label, valid_instance_num in predic_distribution['classes'].iteritems():
+
+        num_predicted_label = float(predicted_distribution['class'][label])
+
+        print label + ' accuracy: ' + str(num_predicted_label \
+            / valid_instance_num)
+
+    print ''
+
+    for label, num_predicted_label in predicted_distribution['category'] \
+        .iteritems():
+
+        print label + ' classifier accuracy: ' + str(num_predicted_label \
+            / ( float(predic_distribution['classes'][label] \
+            + predic_distribution['classes']['no_' + label]) ))
+
+    print ''
+
+    print 'Dataset length: ' + str(len(df.index))
+    
+    df[result_col] = None
+
+    for label, condition in matrix_classes.iteritems():
+        df.loc[((df[classifiers_name_str[0]] == condition[0]) \
+            & (df[classifiers_name_str[1]] == condition[1])) \
+            | ((df[classifiers_name_str[0]] == condition[1]) \
+            & (df[classifiers_name_str[1]] == condition[0])), result_col] \
+            = label
+
+    print df
 
     sys.exit(0)
 

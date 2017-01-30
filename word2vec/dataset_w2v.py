@@ -48,7 +48,9 @@ COMPULSORY_COLUMNS = list(CSV_COLUMNS)
 del COMPULSORY_COLUMNS[2]
 
 LOAD_COLUMNS = list(COMPULSORY_COLUMNS)
-del LOAD_COLUMNS[1]
+del LOAD_COLUMNS[0]
+
+print LOAD_COLUMNS
 
 def check_valid_dir(dir_name):
     if not os.path.isabs(dir_name):
