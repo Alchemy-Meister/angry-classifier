@@ -118,6 +118,10 @@ def main(argv):
     dataset_path = None
     word2vec_dataset_path = None
 
+    dataset_name = None
+    dataset_result_output_path = None
+    results_output_path = None
+
     result_col = 'classification'
     classifiers_name_str = ['anger', 'irony']
     classifiers_attr_str = ['dir', 'model', 'weights', 'distribution']
@@ -152,12 +156,26 @@ def main(argv):
         if o == '--dataset':
             dataset_path = check_valid_path(a, 'dataset')
             dataset_split_path = dataset_path.rsplit('/' ,1)
+            
+            dataset_name = dataset_split_path[1].split('.csv')[0]
+
             word2vec_dataset_path = check_valid_path(dataset_split_path[0] \
-                + '/json/' + dataset_split_path[1].split('.csv')[0] + '.json', \
+                + '/json/' + dataset_name + '.json', \
                 'word2vec dataset')
+
+            # Loads prediction dataset distribution file.
             predic_distribution = ujson.load( open(check_valid_path( \
                 word2vec_dataset_path.split('.json')[0] \
                 + '_distribution.json', 'predict distribution'), 'r') )
+
+            dataset_result_output_path = os.path.join(SCRIPT_DIR, \
+                dataset_name)
+            check_valid_dir(dataset_result_output_path)
+
+            results_output_path = os.path.join(dataset_result_output_path, \
+                'results')
+
+            check_valid_dir(results_output_path)
 
         elif o == '--anger_dir':
             class_dir = check_valid_dir(a)
@@ -307,6 +325,9 @@ def main(argv):
             = label
 
     print predicted_distribution
+
+    df.to_csv(path_or_buf=os.path.join(dataset_result_output_path, \
+        dataset_name), index=False, encoding='utf-8')
 
 if __name__ == '__main__':
     start_time = datetime.now()
