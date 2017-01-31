@@ -77,12 +77,6 @@ def one_hot_encoder(total_classes):
         encoder[code] = vector.tolist()
     return encoder
 
-def find_1(one_hot):
-    for i, e in enumerate(one_hot):
-        if e == 1:
-            return i
-    print 'not found'
-
 def load_model(model_path, weights_path):
     model_file = open(model_path, 'r')
     model_str = model_file.read()
@@ -119,60 +113,6 @@ def check_valid_dir(dir_name):
             sys.exit(2)
 
     return dir_name
-
-def test(test_path, model, labels, max_phrase_length, output_path):
-    # Using keras evaluation method,
-    # just check if I am doing it right with SciKit.
-    X_test, y_test = prepare_samples(test_path, labels, max_phrase_length)
-
-    y_predict = model.evaluate([X_test, X_test, X_test], y_test, verbose=0, \
-        batch_size=BATCH_SIZE)
-
-    print 'The metrics keras is evaluating are: ' + str(model.metrics_names) \
-    + ' and its results: ' + str(y_predict)
-    # Using Scikit in order to evaluate the model.
-    y_predict = model.predict([X_test, X_test, X_test])
-    y_predict = probas_to_classes(y_predict)
-    y_raw_test = []
-    for y1 in y_test:
-        y_raw_test.append(find_1(y1))
-
-    t = time.localtime()
-    timestamp = time.strftime('%b-%d-%Y_%H%M', t)
-
-    #Y_true, y_predict
-    conf_matrix = confusion_matrix(y_raw_test, y_predict)
-    ConfusionMatrixDrawer(conf_matrix, classes=labels, str_id=timestamp, \
-        title='Confusion matrix, without normalization', folder=output_path)
-    ConfusionMatrixDrawer(conf_matrix, classes=labels, normalize=True, \
-        title='Normalized confusion matrix', folder=output_path, \
-        str_id=timestamp)
-
-    print conf_matrix
-    
-    acc = accuracy_score(y_raw_test, y_predict)
-    print "The accuracy of the model using scikit is: " + str(acc)
-
-    f1_macro = f1_score(y_raw_test, y_predict, average="macro")
-    recall_macro = recall_score(y_raw_test, y_predict, average="macro")
-    precision_macro = precision_score(y_raw_test, y_predict, average="macro")
-    f1_micro = f1_score(y_raw_test, y_predict, average="micro")
-    recall_micro = recall_score(y_raw_test, y_predict, average="micro")
-    precision_micro = precision_score(y_raw_test, y_predict, average="micro")
-
-    results = {}
-    results['precision_macro'] = precision_macro
-    results['recall_macro'] = recall_macro
-    results['f1_macro'] = f1_macro
-    results['precision_micro'] = precision_micro
-    results['recall_micro'] = recall_micro
-    results['f1_micro'] = f1_micro
-    results['acc'] = acc
-
-    with codecs.open(output_path + '/' + timestamp, 'w', \
-        encoding='utf-8') as file:
-
-        file.write(ujson.dumps(results, indent=4))
 
 def main(argv):
     dataset_path = None
@@ -244,22 +184,23 @@ def main(argv):
             classifiers[classifiers_name_str[1]][classifiers_attr_str[3]] \
                 = check_valid_path(a, 'irony distribution')
 
+    # Input error detection.
     if dataset_path == None:
-        print 'Error, dataset path is required.\n %s' % USAGE_STRING
+        print 'Error: dataset path is required.\n %s' % USAGE_STRING
         sys.exit(2)
 
     elif classifiers[classifiers_name_str[0]][classifiers_attr_str[0]] == None \
         or classifiers[classifiers_name_str[1]][classifiers_attr_str[0]] \
         == None:
 
-        print 'Error, anger and irony directories are required.\n %s' \
+        print 'Error: anger and irony directories are required.\n %s' \
             % USAGE_STRING
         sys.exit(2)
     elif classifiers[classifiers_name_str[0]][classifiers_attr_str[2]] == None \
         or classifiers[classifiers_name_str[1]][classifiers_attr_str[2]] \
         == None:
         
-        print 'Error, anger and irony model weights filename are required.\n' \
+        print 'Error: anger and irony model weights filename are required.\n' \
             % USAGE_STRING
         sys.exit(2)
 
@@ -267,7 +208,7 @@ def main(argv):
         or classifiers[classifiers_name_str[1]][classifiers_attr_str[3]] \
         == None or predic_distribution == None:
         
-        print 'Error, anger, irony predict distribution paths are required.\n' \
+        print 'Error: anger, irony predict distribution paths are required.\n' \
             % USAGE_STRING
         sys.exit(2)
     else:
@@ -282,17 +223,24 @@ def main(argv):
                 if max_phrase_length != classifier_dict[ \
                     classifiers_attr_str[3] ]['max_phrase_length']:
 
-                    print 'Error, both classifiers must be pre-trained with '
+                    print 'Error: both classifiers must be pre-trained with ' \
                     + 'same max_phrase_length.'
                     sys.exit(2)
 
+        if max_phrase_length != predic_distribution['max_phrase_length']:
+            print 'Error: prediction and pre-trained word embeddings must ' \
+                + 'have same max_phrase_length.'
+
+    # Load original dataset.
     df = pd.read_csv(dataset_path, header=0, \
         dtype={COMPULSORY_COLUMNS[0]: np.int64})
 
+    # Loads word embedding dataset.
     X_predict = prepare_samples(word2vec_dataset_path, max_phrase_length)
 
     predicted_distribution = {'class': {}, 'category': {}}
 
+    # Prediction and evaluation for each classifier.
     for classifier_name, classifier_dict in classifiers.iteritems():
 
         # Load model weights path into the dictionary.
@@ -303,27 +251,33 @@ def main(argv):
         model = load_model(classifier_dict[classifiers_attr_str[1]], \
             classifier_dict[classifiers_attr_str[2]])
 
+        # Dataset prediction.
         y_predict = model.predict([X_predict, X_predict, X_predict])
+        # Calculates prediction's one hot encoder
         y_predict = probas_to_classes(y_predict)
 
+        # Adds one hot encoder into the original dataset as a new column.
         df[classifier_name] = y_predict
 
+        # Get the labels available for the current classifier.
         labels = classifier_dict[classifiers_attr_str[3]]['classes'].keys()
 
         for index in xrange(len(labels)):
+            # Changes the one hot encoder values into representing class names.
             df.loc[df[classifier_name] == index, classifier_name] \
                 = labels[index]
 
+            # Saves the number of correctly classified tweets number per label.
             predicted_distribution['class'][labels[index]] = len(df[ 
                 (df[COMPULSORY_COLUMNS[1]] == labels[index]) \
                 & (df[classifier_name] == df[COMPULSORY_COLUMNS[1]]) ].index)
 
+        # Saves the number of correctly classified tweets per classifier.
         predicted_distribution['category'][classifier_name] = \
             len(df[df[classifier_name] == df[COMPULSORY_COLUMNS[1]]].index)
 
-
+    # Calculates accuracy per label.
     for label, valid_instance_num in predic_distribution['classes'].iteritems():
-
         num_predicted_label = float(predicted_distribution['class'][label])
 
         print label + ' accuracy: ' + str(num_predicted_label \
@@ -331,6 +285,7 @@ def main(argv):
 
     print ''
 
+    # Calculates accuracy score per classifier.
     for label, num_predicted_label in predicted_distribution['category'] \
         .iteritems():
 
@@ -351,86 +306,7 @@ def main(argv):
             & (df[classifiers_name_str[1]] == condition[0])), result_col] \
             = label
 
-    print df
-
-    sys.exit(0)
-
-
-    if target == TARGETS[0] or target == TARGETS[2]:
-        if train_path == None or validation_path == None:
-            print 'Error: Train and Validation dataset paths are required. %s' \
-                % USAGE_STRING
-            sys.exit(2)
-        else:
-            dataset_name = train_path.rsplit('/', 1)[1].split('_train.json')[0]
-            dataset_result_output_path = os.path.join(SCRIPT_DIR, \
-                dataset_name)
-            check_valid_dir(dataset_result_output_path)
-            
-            model_output_path = os.path.join(dataset_result_output_path, \
-                'model')
-            check_valid_dir(model_output_path)
-            model_weights_output_path = os.path.join( \
-                dataset_result_output_path, 'model_weights' )
-            check_valid_dir(model_weights_output_path)
-
-    if target == TARGETS[1] or target == TARGETS[2]:
-        if test_path == None:
-            print 'Error: Test dataset path is required. %s' % USAGE_STRING
-            sys.exit(2)
-        elif dataset_name is None:
-            dataset_name = test_path.rsplit('/', 1)[1].split('_test.json')[0]
-            dataset_result_output_path = os.path.join(SCRIPT_DIR, \
-                dataset_name)
-            check_valid_dir(dataset_result_output_path)
-
-        if target == TARGETS[1] \
-            and (model_path == None or weights_path == None):
-            
-            print 'Error: model and weights paths must be provided to ' \
-             + 'execute the test. %s' % USAGE_STRING
-            sys.exit(2)
-
-    results_output_path = os.path.join(dataset_result_output_path, 'results')
-    check_valid_dir(results_output_path)
-
-    if distribution_path is None:
-        if train_path is not None:
-            distribution_path = train_path.rsplit('_train.json', 1)[0] \
-                + '_distribution.json'
-        else:
-            distribution_path = test_path.rsplit('_test.json', 1)[0] \
-                + '_distribution.json'
-
-    class_distribution = ujson.load(open(distribution_path, 'r'))
-    labels = [key for key in class_distribution['classes'].keys()]
-    num_categories = len(class_distribution['classes'])
-    max_phrase_length = class_distribution['max_phrase_length']
-    model_size = class_distribution['model_feature_length']
-
-    print "Model size: " + str(model_size)
-    print "Number of filters: " + str(NUM_FILTERS)
-    print "Batch size: " + str(BATCH_SIZE)
-    print "Number of epochs: " + str(NB_EPOCH)
-    print "Evaluation period: " + str(EVAL_PERIOD)
-    print 'Max. phrase length: ' + str(max_phrase_length)
-    print 'Building model...'
-
-    if target == TARGETS[1]:
-        merged = load_model(model_path, weights_path)
-    else:
-        merged = generate_model(model_size, max_phrase_length, num_categories)
-    
-    merged.summary()
-    
-    # Execute training if target is train or all.
-    if target == TARGETS[0] or target == TARGETS[2]:
-        train(train_path, validation_path, merged, labels, max_phrase_length, \
-            model_output_path, model_weights_output_path)
-
-    # Execute test if target is test or all.
-    if target == TARGETS[1] or target == TARGETS[2]:
-        test(test_path, merged, labels, max_phrase_length, results_output_path)
+    print predicted_distribution
 
 if __name__ == '__main__':
     start_time = datetime.now()
