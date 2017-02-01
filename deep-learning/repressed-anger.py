@@ -327,7 +327,7 @@ def main(argv):
     print predicted_distribution
 
     df.to_csv(path_or_buf=os.path.join(dataset_result_output_path, \
-        dataset_name), index=False, encoding='utf-8')
+        dataset_name + '.csv'), index=False, encoding='utf-8')
 
 if __name__ == '__main__':
     start_time = datetime.now()

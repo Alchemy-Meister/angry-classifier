@@ -50,8 +50,6 @@ del COMPULSORY_COLUMNS[2]
 LOAD_COLUMNS = list(COMPULSORY_COLUMNS)
 del LOAD_COLUMNS[0]
 
-print LOAD_COLUMNS
-
 def check_valid_dir(dir_name):
     if not os.path.isabs(dir_name):
         dir_name = os.path.join(CWD, dir_name)
