@@ -39,7 +39,8 @@ CLEAN_WORD_LIST = ['URL', 'MENTION']
 USAGE_STRING = 'Usage: dataset_w2v.py ' \
             + '[-d] [-i] [-v] [-s] [-h] [--sample_division] [--indent] ' \
             + '[--validation] [--spell_check] [--size=] [--split_ratio=] ' \
-            + '[--max_phrase_length=] [--help] path_to_dataset'
+            + '[--max_phrase_length=] [--delete-hashtags] [--help] ' \
+            + 'path_to_dataset'
 
 CSV_COLUMNS = ['tweet_id', 'label', 'author', 'content']
 
@@ -118,6 +119,7 @@ def main(argv):
     divide = False
     indent = False
     validation = False
+    delete_hashtags = False
     spell_check = False
     size = None
     force_max_phrase_length = None
@@ -132,7 +134,7 @@ def main(argv):
     try:
         opts, args = getopt.getopt(argv,'divsh',['sample_division', 'indent', \
             'validation', 'size=', 'split_ratio=', 'spell_check', 'help', \
-            'max_phrase_length='])
+            'max_phrase_length=', 'delete-hashtags'])
     except getopt.GetoptError:
         print 'ERROR: Unknown parameter. %s' % USAGE_STRING 
         sys.exit(2)
@@ -176,6 +178,8 @@ def main(argv):
             split_ratios_lenght = len(split_ratios)
         elif o == '-s' or o == '--spell_check':
             spell_check = True
+        elif o == '--delete-hashtags':
+            delete_hashtags = True
 
     if split_ratios_lenght != 0:
         if validation and split_ratios_lenght != 3:
@@ -265,18 +269,24 @@ def main(argv):
     max_word_per_sentence = 0
 
     preprocess_index = 0
+
+    # Twitter preprocessing: replacing URLs and Mentions
+    twitter_url_str = (ur'http[s]?://(?:[a-zA-Z]|[0-9]|' \
+        ur'[$+*%/@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
+
+    twitter_mention_regex = re.compile(ur'(\s+|^|\.)@\S+')
+    twitter_hashtag_regex = re.compile(ur'(\s+|^|\.)#\S+')
+    twitter_url_regex = re.compile(twitter_url_str)
+
+    emoticon_str = (ur'(\<[\/\\]?3|[\(\)\\|\*\$][\-\^]?[\:\;\=]' \
+            ur'|[\:\;\=B8][\-\^]?[3DOPp\@\$\*\\\)\(\/\|])(?=\s|[\!\.\?]|$)')
+
+    emoticon_regex = re.compile(emoticon_str)
+
     for tweet in tqdm(df.itertuples(), desc='Tweet preprocessing', \
         total=df_length):
 
         label = tweet[1]
-
-        # Twitter preprocessing: replacing URLs and Mentions
-        twitter_url_str = (ur'http[s]?://(?:[a-zA-Z]|[0-9]|' \
-            ur'[$+*%/@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
-
-        twitter_mention_regex = re.compile(ur'(\s+|^|\.)@\S+')
-        twitter_hashtag_regex = re.compile(ur'(\s+|^|\.)#\S+')
-        twitter_url_regex = re.compile(twitter_url_str)
 
         # Clean text of new lines.
         preprocessed_tweet = tweet[2].replace('\n', ' ');
@@ -284,11 +294,6 @@ def main(argv):
         # Unescape possible HTML entities.
         preprocessed_tweet = BeautifulSoup(preprocessed_tweet, 'html.parser') \
             .prettify()
-
-        emoticon_str = (ur'(\<[\/\\]?3|[\(\)\\|\*\$][\-\^]?[\:\;\=]' \
-            ur'|[\:\;\=B8][\-\^]?[3DOPp\@\$\*\\\)\(\/\|])(?=\s|[\!\.\?]|$)')
-
-        emoticon_regex = re.compile(emoticon_str)
 
         # Lowercase tweet text.
         preprocessed_tweet = preprocessed_tweet.lower()
@@ -299,6 +304,11 @@ def main(argv):
         preprocessed_tweet = re.sub(twitter_mention_regex, ' MENTION', \
             preprocessed_tweet)
 
+        if delete_hashtags:
+            preprocessed_tweet = re.sub(twitter_hashtag_regex, 'TAG', \
+                preprocessed_tweet)
+
+        # Search for emoticons.
         matches = re.finditer(emoticon_regex, preprocessed_tweet)
 
         # for match_num, match in enumerate(matches):
@@ -372,6 +382,11 @@ def main(argv):
 
         # Update index.
         preprocess_index += 1
+
+    del twitter_url_regex
+    del twitter_mention_regex
+    del twitter_hashtag_regex
+    del emoticon_regex
 
     if force_max_phrase_length != None:
         max_word_per_sentence = force_max_phrase_length
