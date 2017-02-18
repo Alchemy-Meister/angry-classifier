@@ -20,6 +20,7 @@ IRONY_COLUMN = 'Does this sentence contains irony?'
 LABELS = ['Explicit anger', 'Repressed anger', 'Normal', 'Irony']
 CLASSIFICATION_COLUMNS = [label.lower() for label in LABELS]
 
+ORIGINAL_IRONY_LABELS = ['irony', 'no_irony']
 IRONY_LABELS = ['Yes', 'No']
 IRONY_COLUMNS = [label.lower() for label in IRONY_LABELS]
 
@@ -31,6 +32,10 @@ CSV_COLUMNS = ['tweet_id', 'label', 'author', 'content']
 # Author column is not required.
 COMPULSORY_COLUMNS = list(CSV_COLUMNS)
 del COMPULSORY_COLUMNS[2]
+
+SERIALIZE_COLUMNS = CSV_COLUMNS
+SERIALIZE_COLUMNS.extend( [CLASSIFICATION_RESULT_COLUMN[0], \
+    IRONY_RESULT_COLUMN[0]] )
 
 def check_valid_path(path, desc):
     if not os.path.isabs(path):
@@ -84,8 +89,6 @@ def main(argv):
 
     output = dataset_path.split('.csv')[0] + '_hit_processed.csv'
 
-    print output
-
     classification_result_df = pd.DataFrame(columns=CLASSIFICATION_COLUMNS)
     irony_result_df = pd.DataFrame(columns=IRONY_COLUMNS)
 
@@ -102,17 +105,10 @@ def main(argv):
             df = pd.read_csv(os.path.join(SCRIPT_DIR, file))
             df.drop(REMOVE_COLUMN, axis=1, inplace=True)
 
-            #print df
-            #print df.columns
-
             classification_df = df.filter(regex='.*' + CLASSIFICATION_COLUMN \
                 + '.*$', axis=1)
 
             irony_df = df.filter(regex='.*' + IRONY_COLUMN + '.*$', axis=1)
-
-            # print df.columns
-            # print classification_df.columns
-            # print irony_df.columns
 
             # Get the tweet original position for the irony column.
             irony_idx = [file_index * 100 + df.columns.get_loc(column) \
@@ -156,17 +152,24 @@ def main(argv):
 
         df_result_list[index] = df
 
+    for index, label in enumerate(IRONY_COLUMNS):
+        df_result_list[1][df_result_list[1][IRONY_RESULT_COLUMN[0]] == label] \
+            = ORIGINAL_IRONY_LABELS[index]
+
     # Load original dataset.
     df = pd.read_csv(dataset_path, header=0, \
         dtype={COMPULSORY_COLUMNS[0]: np.int64})
 
     df = pd.concat([df, df_result_list[0]], ignore_index=True, axis=1)
+    df[IRONY_RESULT_COLUMN[0]] = np.nan
 
-    print df
-
-    print df_result_list[0]
     df_result_list[1].index = irony_idxs
-    print df_result_list[1]
+
+    for row in df_result_list[1].itertuples():
+        df.ix[row[0], IRONY_RESULT_COLUMN[0]] = row[1]
+
+    df.to_csv(path_or_buf=output, header=SERIALIZE_COLUMNS, index=False,
+            encoding='utf-8')
 
 if __name__ == '__main__':
     main(sys.argv[1:])
