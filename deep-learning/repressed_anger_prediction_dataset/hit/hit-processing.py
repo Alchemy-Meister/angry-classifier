@@ -34,8 +34,7 @@ COMPULSORY_COLUMNS = list(CSV_COLUMNS)
 del COMPULSORY_COLUMNS[2]
 
 SERIALIZE_COLUMNS = CSV_COLUMNS
-SERIALIZE_COLUMNS.extend( [CLASSIFICATION_RESULT_COLUMN[0], \
-    IRONY_RESULT_COLUMN[0]] )
+SERIALIZE_COLUMNS.extend(CLASSIFICATION_RESULT_COLUMN)
 
 def check_valid_path(path, desc):
     if not os.path.isabs(path):
@@ -65,17 +64,22 @@ def check_valid_dir(dir_name):
 def generate_frequency_df(columns, df):
     result_df = pd.DataFrame(columns=columns)
 
+    # Every column of the df represents a question of the form.
     for column in df.columns:
+        # Calculates the frequencies for the current column from all rows.
         tweet_count = df[column].value_counts()
 
         tweet_result = {}
 
+        # Initializes a dict with all the labels sets as zero.
         for label in columns:
             tweet_result[label] = 0
 
+        # Sets the real count for the frequencies for the current question.
         for index, label in enumerate(tweet_count.index):
             tweet_result[label.lower()] = tweet_count[index]
 
+        # Append the current question's frequencies to the dataset.
         result_df = result_df.append(tweet_result, ignore_index=True)
 
     return result_df
@@ -100,17 +104,18 @@ def main(argv):
 
     for file_index, file in enumerate(os.listdir(SCRIPT_DIR)):
         if file.endswith('.csv'):
-            # print file
             # Loads CSV into dataframe.
             df = pd.read_csv(os.path.join(SCRIPT_DIR, file))
+            
+            # Removes the timestamp column from the dataframe.
             df.drop(REMOVE_COLUMN, axis=1, inplace=True)
 
+            # Split the dataframe into the classification and irony questions.
             classification_df = df.filter(regex='.*' + CLASSIFICATION_COLUMN \
                 + '.*$', axis=1)
-
             irony_df = df.filter(regex='.*' + IRONY_COLUMN + '.*$', axis=1)
 
-            # Get the tweet original position for the irony column.
+            # Get the tweet original position for the irony questions.
             irony_idx = [file_index * 100 + df.columns.get_loc(column) \
                 for column in irony_df.columns ]
 
@@ -118,10 +123,12 @@ def main(argv):
             for index, idx in enumerate(irony_idx):
                 irony_idx[index] -= 1 + index
 
+            # Append current file's index to an array that contains all files'
             irony_idxs.extend(irony_idx)
 
             df_list = [classification_df, irony_df]
 
+            # Generates frequencies for classification and irony dataframes.
             for index in range(len(df_list)):
                 df_result_list[index] = df_result_list[index].append( \
                     generate_frequency_df(column_list[index], df_list[index]), \
@@ -129,22 +136,30 @@ def main(argv):
 
 
     for index, df in enumerate(df_result_list):
+        # Change frequency values from float to int.
         df[column_list[index]] = df[column_list[index]].astype(int)
+        
+        # The max value for each column.
         rowmax = df.max(axis=1)
+        # Boolean NP array stating which cells are maximum.
         idx = np.where(df.values == rowmax[:,None])
 
+        # Magic to list all the instances that are maximum for each column.
         groups = it.groupby(zip(*idx), key=operator.itemgetter(0))
-
         rowmax = [[df.columns[j] for i, j in grp] for k, grp in groups]
 
         df = pd.DataFrame(columns=result_column_list[index])
 
+        # Deal with multiple draw maximum responses.
         for classification in rowmax:
             max_length = len(classification)
             max_label = {}
+            # If there's no draw.
             if max_length == 1:
+                # Insert the maximum value as it is.
                 max_label[result_column_list[index][0]] = classification[0]
             else:
+                # If there's draw, select randomly from maximum values.
                 max_label[result_column_list[index][0]] = classification[ \
                     randint(0, max_length - 1) ]
 
@@ -152,6 +167,7 @@ def main(argv):
 
         df_result_list[index] = df
 
+    # Change Irony y/n response columns to target labels.
     for index, label in enumerate(IRONY_COLUMNS):
         df_result_list[1][df_result_list[1][IRONY_RESULT_COLUMN[0]] == label] \
             = ORIGINAL_IRONY_LABELS[index]
@@ -160,14 +176,27 @@ def main(argv):
     df = pd.read_csv(dataset_path, header=0, \
         dtype={COMPULSORY_COLUMNS[0]: np.int64})
 
+    # Add manual classification and irony columns.
     df = pd.concat([df, df_result_list[0]], ignore_index=True, axis=1)
     df[IRONY_RESULT_COLUMN[0]] = np.nan
 
+    # Update dataframe index to original row position values.
     df_result_list[1].index = irony_idxs
 
+    # Add manual irony results to proper rows.
     for row in df_result_list[1].itertuples():
         df.ix[row[0], IRONY_RESULT_COLUMN[0]] = row[1]
 
+    # Fixes irony classified target label, according to manual irony column.
+    for row in df[ (df[1] != df[IRONY_RESULT_COLUMN[0]]) \
+        & (df[IRONY_RESULT_COLUMN[0]].notnull()) ].itertuples():
+
+        df.ix[row[0], df.columns[1]] = row[len(row) - 1]
+
+    # Removes the manual irony column from the dataframe.
+    df.drop(IRONY_RESULT_COLUMN[0], axis=1, inplace=True)
+
+    # Serialize resulting dataframe.
     df.to_csv(path_or_buf=output, header=SERIALIZE_COLUMNS, index=False,
             encoding='utf-8')
 
