@@ -19,11 +19,10 @@ import ujson, json, base64
 import numpy as np
 import pandas as pd
 from drawing_utils import EpochDrawer, ConfusionMatrixDrawer
+from collections import OrderedDict
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 CWD = os.getcwd()
-
-TARGETS = ['train', 'test', 'all']
 
 USAGE_STRING = 'Usage: cnn.py [-h] [--help] ' \
     + '[--dataset=path_to_original_dataset]' \
@@ -34,7 +33,7 @@ USAGE_STRING = 'Usage: cnn.py [-h] [--help] ' \
     + '[--irony_model_weights=anger_weights_filename] ' \
     + '[--irony-distribution=irony_distribution_path]'
 
-CSV_COLUMNS = ['tweet_id', 'label', 'author', 'content']
+CSV_COLUMNS = ['tweet_id', 'label', 'author', 'content', 'manual_label']
 
 # Author column is not required.
 COMPULSORY_COLUMNS = list(CSV_COLUMNS)
@@ -132,6 +131,9 @@ def main(argv):
         'normal': ['no_anger', 'no_irony'],
         'irony': ['no_anger', 'irony']
         }
+
+    ordered_matrix_classes = OrderedDict(matrix_classes)
+    ordered_matrix_classes = ordered_matrix_classes.keys()
 
     classifiers = dict()
     for classifier_name in classifiers_name_str:
@@ -313,16 +315,94 @@ def main(argv):
 
     print ''
 
-    print 'Dataset length: ' + str(len(df.index))
-    
+    # Adds the final classification column to the CSV.
     df[result_col] = None
 
+    # Generates final classification according the 2x2 matrix classes.
     for label, condition in matrix_classes.iteritems():
         df.loc[((df[classifiers_name_str[0]] == condition[0]) \
             & (df[classifiers_name_str[1]] == condition[1])) \
             | ((df[classifiers_name_str[0]] == condition[1]) \
             & (df[classifiers_name_str[1]] == condition[0])), result_col] \
             = label
+
+    print predicted_distribution
+    del predic_distribution
+    print ''
+
+    print 'Dataset length: ' + str(len(df.index))
+    print ''
+
+    manual_labeled_tweets = df[~df[COMPULSORY_COLUMNS[3]].isnull()]
+
+    print 'Compared to manual classification'
+
+    y_predict = manual_labeled_tweets[result_col]
+    actual_y = manual_labeled_tweets[COMPULSORY_COLUMNS[3]]
+
+    for index, ordered_matrix_class in enumerate(ordered_matrix_classes):
+        y_predict = y_predict.replace(to_replace=ordered_matrix_class, \
+            value=index)
+
+        actual_y = actual_y.replace(to_replace=ordered_matrix_class, \
+            value=index)
+
+    t = time.localtime()
+    timestamp = time.strftime('%b-%d-%Y_%H%M', t)
+
+    conf_matrix = confusion_matrix(actual_y, y_predict)
+
+    #Y_true, y_predict
+    conf_matrix = confusion_matrix(actual_y, y_predict)
+    ConfusionMatrixDrawer(conf_matrix, classes=ordered_matrix_classes, \
+        str_id=timestamp, title='Confusion matrix, without normalization', \
+        folder=results_output_path)
+    ConfusionMatrixDrawer(conf_matrix, classes=ordered_matrix_classes, \
+        normalize=True, title='Normalized confusion matrix', \
+        folder=results_output_path, str_id=timestamp)
+
+    acc = accuracy_score(actual_y, y_predict)
+    print "The accuracy of the model using scikit is: " + str(acc)
+
+    f1_macro = f1_score(actual_y, y_predict, average="macro")
+    recall_macro = recall_score(actual_y, y_predict, average="macro")
+    precision_macro = precision_score(actual_y, y_predict, average="macro")
+    f1_micro = f1_score(actual_y, y_predict, average="micro")
+    recall_micro = recall_score(actual_y, y_predict, average="micro")
+    precision_micro = precision_score(actual_y, y_predict, average="micro")
+
+    results = {}
+    results['precision_macro'] = precision_macro
+    results['recall_macro'] = recall_macro
+    results['f1_macro'] = f1_macro
+    results['precision_micro'] = precision_micro
+    results['recall_micro'] = recall_micro
+    results['f1_micro'] = f1_micro
+    results['acc'] = acc
+
+    with codecs.open(results_output_path + '/' + timestamp, 'w', \
+        encoding='utf-8') as file:
+
+        file.write(ujson.dumps(results, indent=4))
+
+    predicted_distribution = {}
+
+    for matrix_class in matrix_classes.keys():
+        manual_class = manual_labeled_tweets[manual_labeled_tweets[ \
+            COMPULSORY_COLUMNS[3] ].str.match(matrix_class)]
+        
+        manual_class_num = len(manual_class.index)
+        predicted_class_num = len(manual_labeled_tweets[manual_labeled_tweets[ \
+            result_col ].str.match(matrix_class)].index)
+
+        correct_class_num = len(manual_class[ \
+            manual_class[COMPULSORY_COLUMNS[3]] == manual_class[result_col] ] \
+            .index)
+
+        predicted_distribution[matrix_class] = manual_class_num
+
+        print( '%s accuracy: %s' % \
+            (matrix_class, (float(correct_class_num) / manual_class_num)))
 
     print predicted_distribution
 

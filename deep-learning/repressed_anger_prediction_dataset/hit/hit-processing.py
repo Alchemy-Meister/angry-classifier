@@ -7,7 +7,6 @@ import numpy as np
 import operator
 import os
 import pandas as pd
-from random import randint
 import sys
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -102,38 +101,47 @@ def main(argv):
 
     irony_idxs = []
 
-    for file_index, file in enumerate(os.listdir(SCRIPT_DIR)):
+    files = []
+
+    for file in os.listdir(SCRIPT_DIR):
         if file.endswith('.csv'):
-            # Loads CSV into dataframe.
-            df = pd.read_csv(os.path.join(SCRIPT_DIR, file))
-            
-            # Removes the timestamp column from the dataframe.
-            df.drop(REMOVE_COLUMN, axis=1, inplace=True)
+            files.append(file)
 
-            # Split the dataframe into the classification and irony questions.
-            classification_df = df.filter(regex='.*' + CLASSIFICATION_COLUMN \
-                + '.*$', axis=1)
-            irony_df = df.filter(regex='.*' + IRONY_COLUMN + '.*$', axis=1)
+    files = sorted(files)
 
-            # Get the tweet original position for the irony questions.
-            irony_idx = [file_index * 100 + df.columns.get_loc(column) \
-                for column in irony_df.columns ]
+    for file_index, file in enumerate(files):
+        # Loads CSV into dataframe.
+        df = pd.read_csv(os.path.join(SCRIPT_DIR, file))
+        
+        # Removes the timestamp column from the dataframe.
+        df.drop(REMOVE_COLUMN, axis=1, inplace=True)
 
-            # Fix the deviation of irony index.
-            for index, idx in enumerate(irony_idx):
-                irony_idx[index] -= 1 + index
+        # Split the dataframe into the classification and irony questions.
+        classification_df = df.filter(regex='.*' + CLASSIFICATION_COLUMN \
+            + '.*$', axis=1)
+        irony_df = df.filter(regex='.*' + IRONY_COLUMN + '.*$', axis=1)
 
-            # Append current file's index to an array that contains all files'
-            irony_idxs.extend(irony_idx)
+        # Get the tweet original position for the irony questions.
+        irony_idx = [file_index * 100 + df.columns.get_loc(column) \
+            for column in irony_df.columns ]
 
-            df_list = [classification_df, irony_df]
+        # Fix the deviation of irony index.
+        for index, idx in enumerate(irony_idx):
+            irony_idx[index] -= 1 + index
 
-            # Generates frequencies for classification and irony dataframes.
-            for index in range(len(df_list)):
-                df_result_list[index] = df_result_list[index].append( \
-                    generate_frequency_df(column_list[index], df_list[index]), \
-                    ignore_index=True )
+        # Append current file's index to an array that contains all files'
+        irony_idxs.extend(irony_idx)
 
+        df_list = [classification_df, irony_df]
+
+        # Generates frequencies for classification and irony dataframes.
+        for index in range(len(df_list)):
+            df_result_list[index] = df_result_list[index].append( \
+                generate_frequency_df(column_list[index], df_list[index]), \
+                ignore_index=True )
+
+
+    remove_tweet_count = 0
 
     for index, df in enumerate(df_result_list):
         # Change frequency values from float to int.
@@ -159,13 +167,15 @@ def main(argv):
                 # Insert the maximum value as it is.
                 max_label[result_column_list[index][0]] = classification[0]
             else:
-                # If there's draw, select randomly from maximum values.
-                max_label[result_column_list[index][0]] = classification[ \
-                    randint(0, max_length - 1) ]
+                # If there's draw, insert key value as later removal flag.
+                max_label[result_column_list[index][0]] = 'REMOVE'
+                remove_tweet_count = remove_tweet_count + 1
 
             df = df.append(max_label, ignore_index=True)
 
         df_result_list[index] = df
+
+    print 'Ambiguous tweets: %s' % remove_tweet_count
 
     # Change Irony y/n response columns to target labels.
     for index, label in enumerate(IRONY_COLUMNS):
@@ -195,6 +205,10 @@ def main(argv):
 
     # Removes the manual irony column from the dataframe.
     df.drop(IRONY_RESULT_COLUMN[0], axis=1, inplace=True)
+
+    # Removes all the rows that have the revmoval flag.
+    df = df[ (~df[4].str.match('REMOVE', na=False)) & \
+        (~df[1].str.match('REMOVE', na=False)) ]
 
     # Serialize resulting dataframe.
     df.to_csv(path_or_buf=output, header=SERIALIZE_COLUMNS, index=False,
