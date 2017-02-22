@@ -35,6 +35,8 @@ del COMPULSORY_COLUMNS[2]
 SERIALIZE_COLUMNS = CSV_COLUMNS
 SERIALIZE_COLUMNS.extend(CLASSIFICATION_RESULT_COLUMN)
 
+FORM_SIZE = 100
+
 def check_valid_path(path, desc):
     if not os.path.isabs(path):
         # Make relative path absolute.
@@ -99,9 +101,12 @@ def main(argv):
     column_list = [CLASSIFICATION_COLUMNS, IRONY_COLUMNS]
     result_column_list = [CLASSIFICATION_RESULT_COLUMN, IRONY_RESULT_COLUMN]
 
+    classification_idxs = []
     irony_idxs = []
 
     files = []
+
+    responses = {}
 
     for file in os.listdir(SCRIPT_DIR):
         if file.endswith('.csv'):
@@ -109,7 +114,7 @@ def main(argv):
 
     files = sorted(files)
 
-    for file_index, file in enumerate(files):
+    for file in files:
         # Loads CSV into dataframe.
         df = pd.read_csv(os.path.join(SCRIPT_DIR, file))
         
@@ -121,8 +126,19 @@ def main(argv):
             + '.*$', axis=1)
         irony_df = df.filter(regex='.*' + IRONY_COLUMN + '.*$', axis=1)
 
+        try:
+            part_and_responses_str = file.split('out')[0].split()
+            part_start_idx = int(part_and_responses_str[-2][:-1])
+            responses[part_start_idx] = int(part_and_responses_str[-1])
+            part_start_idx = part_start_idx * FORM_SIZE - FORM_SIZE
+
+        except:
+            print 'Error, invalid file name format. Eg: Name (Part 1) 5 out '\
+                + 'of 5 responses.csv'
+            sys.exit(2)
+
         # Get the tweet original position for the irony questions.
-        irony_idx = [file_index * 100 + df.columns.get_loc(column) \
+        irony_idx = [part_start_idx + df.columns.get_loc(column) \
             for column in irony_df.columns ]
 
         # Fix the deviation of irony index.
@@ -130,6 +146,8 @@ def main(argv):
             irony_idx[index] -= 1 + index
 
         # Append current file's index to an array that contains all files'
+        classification_idxs.extend(range(part_start_idx, part_start_idx \
+            + FORM_SIZE))
         irony_idxs.extend(irony_idx)
 
         df_list = [classification_df, irony_df]
@@ -140,7 +158,7 @@ def main(argv):
                 generate_frequency_df(column_list[index], df_list[index]), \
                 ignore_index=True )
 
-
+    idxs_list = [classification_idxs, irony_idxs]
     remove_tweet_count = 0
 
     for index, df in enumerate(df_result_list):
@@ -154,26 +172,29 @@ def main(argv):
 
         # Magic to list all the instances that are maximum for each column.
         groups = it.groupby(zip(*idx), key=operator.itemgetter(0))
-        rowmax = [[df.columns[j] for i, j in grp] for k, grp in groups]
+        max_class = [[df.columns[j] for i, j in grp] for k, grp in groups]
 
-        df = pd.DataFrame(columns=result_column_list[index])
+        df_class = pd.DataFrame(columns=result_column_list[index])
 
         # Deal with multiple draw maximum responses.
-        for classification in rowmax:
+        for max_class_index, classification in enumerate(max_class):
             max_length = len(classification)
             max_label = {}
-            # If there's no draw.
-            if max_length == 1:
+            # If there's no draw & the maximum answer has more than half votes.
+            if max_length == 1 and rowmax[max_class_index] > responses[ \
+                int(idxs_list[index][max_class_index] / FORM_SIZE) + 1] / 2:
+
                 # Insert the maximum value as it is.
                 max_label[result_column_list[index][0]] = classification[0]
+
             else:
                 # If there's draw, insert key value as later removal flag.
                 max_label[result_column_list[index][0]] = 'REMOVE'
                 remove_tweet_count = remove_tweet_count + 1
 
-            df = df.append(max_label, ignore_index=True)
+            df_class = df_class.append(max_label, ignore_index=True)
 
-        df_result_list[index] = df
+        df_result_list[index] = df_class
 
     print 'Ambiguous tweets: %s' % remove_tweet_count
 
@@ -186,29 +207,34 @@ def main(argv):
     df = pd.read_csv(dataset_path, header=0, \
         dtype={COMPULSORY_COLUMNS[0]: np.int64})
 
+    for index, dataframe in enumerate(df_result_list):
+        # Update dataframe index to original row position values.
+        df_result_list[index].index = idxs_list[index]
+
     # Add manual classification and irony columns.
-    df = pd.concat([df, df_result_list[0]], ignore_index=True, axis=1)
+    df[CLASSIFICATION_RESULT_COLUMN[0]] = np.nan
     df[IRONY_RESULT_COLUMN[0]] = np.nan
 
-    # Update dataframe index to original row position values.
-    df_result_list[1].index = irony_idxs
+    # Add manual classification results to proper rows.
+    for row in df_result_list[0].itertuples():
+        df.ix[row[0], 4] = row[1]
 
     # Add manual irony results to proper rows.
     for row in df_result_list[1].itertuples():
         df.ix[row[0], IRONY_RESULT_COLUMN[0]] = row[1]
 
     # Fixes irony classified target label, according to manual irony column.
-    for row in df[ (df[1] != df[IRONY_RESULT_COLUMN[0]]) \
+    for row in df[ (df[COMPULSORY_COLUMNS[1]] != df[IRONY_RESULT_COLUMN[0]]) \
         & (df[IRONY_RESULT_COLUMN[0]].notnull()) ].itertuples():
 
-        df.ix[row[0], df.columns[1]] = row[len(row) - 1]
+        df.ix[row[0], COMPULSORY_COLUMNS[1]] = row[len(row) - 1]
 
     # Removes the manual irony column from the dataframe.
     df.drop(IRONY_RESULT_COLUMN[0], axis=1, inplace=True)
 
     # Removes all the rows that have the revmoval flag.
-    df = df[ (~df[4].str.match('REMOVE', na=False)) & \
-        (~df[1].str.match('REMOVE', na=False)) ]
+    df = df[ (~df[SERIALIZE_COLUMNS[4]].str.match('REMOVE', na=False)) & \
+        (~df[SERIALIZE_COLUMNS[1]].str.match('REMOVE', na=False)) ]
 
     # Serialize resulting dataframe.
     df.to_csv(path_or_buf=output, header=SERIALIZE_COLUMNS, index=False,
