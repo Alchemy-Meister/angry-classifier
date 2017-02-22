@@ -127,6 +127,7 @@ def main(argv):
         irony_df = df.filter(regex='.*' + IRONY_COLUMN + '.*$', axis=1)
 
         try:
+            # Gets the part of the form and responses from the file name.
             part_and_responses_str = file.split('out')[0].split()
             part_start_idx = int(part_and_responses_str[-2][:-1])
             responses[part_start_idx] = int(part_and_responses_str[-1])

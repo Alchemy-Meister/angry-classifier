@@ -37,10 +37,10 @@ NUM_MODEL_FEATURES = 300
 CLEAN_WORD_LIST = ['URL', 'MENTION']
 
 USAGE_STRING = 'Usage: dataset_w2v.py ' \
-            + '[-d] [-i] [-v] [-s] [-h] [--sample_division] [--indent] ' \
+            + '[-d] [-g] [-i] [-v] [-s] [-h] [--sample_division] [--indent] ' \
             + '[--validation] [--spell_check] [--size=] [--split_ratio=] ' \
-            + '[--max_phrase_length=] [--delete-hashtags] [--help] ' \
-            + 'path_to_dataset'
+            + '[--max_phrase_length=] [--google_model] [--delete-hashtags] ' \
+            + '[--help] path_to_dataset'
 
 CSV_COLUMNS = ['tweet_id', 'label', 'author', 'content']
 
@@ -123,6 +123,7 @@ def main(argv):
     spell_check = False
     size = None
     force_max_phrase_length = None
+    use_twitter_model = False
     task_description = 'Calculating Word2Vec values'
 
     model_rel_path = '/model/GoogleNews-vectors-negative300.bin'
@@ -132,9 +133,9 @@ def main(argv):
     output_path = None
 
     try:
-        opts, args = getopt.getopt(argv,'divsh',['sample_division', 'indent', \
+        opts, args = getopt.getopt(argv,'divtsh',['sample_division', 'indent', \
             'validation', 'size=', 'split_ratio=', 'spell_check', 'help', \
-            'max_phrase_length=', 'delete-hashtags'])
+            'max_phrase_length=', 'delete-hashtags', 'twitter_model'])
     except getopt.GetoptError:
         print 'ERROR: Unknown parameter. %s' % USAGE_STRING 
         sys.exit(2)
@@ -180,6 +181,12 @@ def main(argv):
             spell_check = True
         elif o == '--delete-hashtags':
             delete_hashtags = True
+        elif o == '-t' or o == '--twitter_model':
+            use_twitter_model = True
+            import word2vecReader
+            model_rel_path = '/model/word2vec_twitter_model.bin'
+            global NUM_MODEL_FEATURES
+            NUM_MODEL_FEATURES = 400
 
     if split_ratios_lenght != 0:
         if validation and split_ratios_lenght != 3:
@@ -233,8 +240,12 @@ def main(argv):
 
     # Loads Word2Vec model.
     # Load Google's pre-trained Word2Vec model.
-    model = gensim.models.Word2Vec.load_word2vec_format( \
-        DIR_PATH + model_rel_path, binary=True)
+    if use_twitter_model:
+        model = model = word2vecReader.Word2Vec.load_word2vec_format(DIR_PATH \
+            + model_rel_path, binary=True)
+    else:
+        model = gensim.models.Word2Vec.load_word2vec_format( \
+            DIR_PATH + model_rel_path, binary=True)
 
     logger.info('Model loading complete, elapsed time: %s', \
         str(datetime.now() - model_load_start_time))
