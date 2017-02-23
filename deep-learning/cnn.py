@@ -127,10 +127,10 @@ def generate_model(model_size, max_phrase_length, num_categories):
 
 def save_model(model, model_output_path, model_weights_output_path, model_size):
     json_string = model.to_json()
-    open(model_output_path + '/model-' + model_size +'.json', 'w') \
+    open(model_output_path + '/model-' + str(model_size) +'.json', 'w') \
         .write(json_string)
     model.save_weights(model_weights_output_path + '/model_weights-' + \
-        model_size +'.h5', overwrite=True)
+        str(model_size) +'.h5', overwrite=True)
 
 def load_model(model_path, weights_path):
     model_file = open(model_path, 'r')
@@ -249,7 +249,7 @@ def test(test_path, model, labels, max_phrase_length, output_path, model_size):
     results['f1_micro'] = f1_micro
     results['acc'] = acc
 
-    with codecs.open(output_path + '/' + timestamp + '(' + model_size + \
+    with codecs.open(output_path + '/' + timestamp + '(' + str(model_size) + \
         ' features)', 'w', encoding='utf-8') as file:
 
         file.write(ujson.dumps(results, indent=4))
