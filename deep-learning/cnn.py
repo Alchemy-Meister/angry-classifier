@@ -125,11 +125,12 @@ def generate_model(model_size, max_phrase_length, num_categories):
 
     return merged
 
-def save_model(model, model_output_path, model_weights_output_path):
+def save_model(model, model_output_path, model_weights_output_path, model_size):
     json_string = model.to_json()
-    open(model_output_path + '/model.json', 'w').write(json_string)
-    model.save_weights(model_weights_output_path + '/model_weights.h5', \
-        overwrite=True)
+    open(model_output_path + '/model-' + model_size +'.json', 'w') \
+        .write(json_string)
+    model.save_weights(model_weights_output_path + '/model_weights-' + \
+        model_size +'.h5', overwrite=True)
 
 def load_model(model_path, weights_path):
     model_file = open(model_path, 'r')
@@ -169,7 +170,7 @@ def check_valid_dir(dir_name):
     return dir_name
 
 def train(train_path, validation_path, model, labels, max_phrase_length, \
-    model_output_path, model_weights_output_path):
+    model_output_path, model_weights_output_path, model_size):
     
     X_train, y_train = prepare_samples(train_path, labels, max_phrase_length)
     X_validation, y_validation = prepare_samples(validation_path, labels, \
@@ -179,8 +180,9 @@ def train(train_path, validation_path, model, labels, max_phrase_length, \
         min_delta=0, patience=PATIENCE, verbose=0, mode='auto')
     #TODO:Check how save_best_only works
     checkpoint = ModelCheckpoint(model_weights_output_path + '/{epoch:02d}-{' \
-        + STOP_CONDITION + ':.2f}.hdf5', monitor=STOP_CONDITION, verbose=0, \
-        save_best_only=True, save_weights_only=False, mode='auto')
+        + STOP_CONDITION + ':.2f}-' + model_size + '.hdf5', \
+        monitor=STOP_CONDITION, verbose=0, save_best_only=True, \
+        save_weights_only=False, mode='auto')
 
     print 'Training...'
     sys.stdout.flush()
@@ -193,10 +195,10 @@ def train(train_path, validation_path, model, labels, max_phrase_length, \
     print 'Saving model...'
     sys.stdout.flush()
 
-    save_model(model, model_output_path, model_weights_output_path)
+    save_model(model, model_output_path, model_weights_output_path, model_size)
     print 'LLAP'
 
-def test(test_path, model, labels, max_phrase_length, output_path):
+def test(test_path, model, labels, max_phrase_length, output_path, model_size):
     # Using keras evaluation method,
     # just check if I am doing it right with SciKit.
     X_test, y_test = prepare_samples(test_path, labels, max_phrase_length)
@@ -245,8 +247,8 @@ def test(test_path, model, labels, max_phrase_length, output_path):
     results['f1_micro'] = f1_micro
     results['acc'] = acc
 
-    with codecs.open(output_path + '/' + timestamp, 'w', \
-        encoding='utf-8') as file:
+    with codecs.open(output_path + '/' + timestamp + '(' + model_size + \
+        ' features)', 'w', encoding='utf-8') as file:
 
         file.write(ujson.dumps(results, indent=4))
 
@@ -373,11 +375,12 @@ def main(argv):
     # Execute training if target is train or all.
     if target == TARGETS[0] or target == TARGETS[2]:
         train(train_path, validation_path, merged, labels, max_phrase_length, \
-            model_output_path, model_weights_output_path)
+            model_output_path, model_weights_output_path, model_size)
 
     # Execute test if target is test or all.
     if target == TARGETS[1] or target == TARGETS[2]:
-        test(test_path, merged, labels, max_phrase_length, results_output_path)
+        test(test_path, merged, labels, max_phrase_length, results_output_path \
+            model_size)
 
 if __name__ == '__main__':
     start_time = datetime.now()

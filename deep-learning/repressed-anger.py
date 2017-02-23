@@ -141,6 +141,7 @@ def main(argv):
 
     classifiers_length = len(classifiers.keys())
     max_phrase_length = None
+    model_length = None
     predic_distribution = None
 
     try:
@@ -239,17 +240,31 @@ def main(argv):
             if max_phrase_length is None:
                 max_phrase_length = classifier_dict[classifiers_attr_str[3]] \
                     ['max_phrase_length']
-            else:
-                if max_phrase_length != classifier_dict[ \
-                    classifiers_attr_str[3] ]['max_phrase_length']:
+            elif max_phrase_length != classifier_dict[ \
+                classifiers_attr_str[3] ]['max_phrase_length']:
 
-                    print 'Error: both classifiers must be pre-trained with ' \
-                    + 'same max_phrase_length.'
-                    sys.exit(2)
+                print 'Error: both classifiers must be pre-trained with ' \
+                + 'same max_phrase_length.'
+                sys.exit(2)
+
+            if model_length == None:
+                model_length = classifier_dict[ \
+                    classifiers_attr_str[3] ]['model_feature_length']
+            elif model_length != classifier_dict[ \
+                classifiers_attr_str[3] ]['model_feature_length']:
+
+                print 'Error: both classifiers much be pre-trained with ' \
+                    + 'same model feature length.'
+                sys.exit(2)
 
         if max_phrase_length != predic_distribution['max_phrase_length']:
             print 'Error: prediction and pre-trained word embeddings must ' \
                 + 'have same max_phrase_length.'
+            sys.exit(2)
+        elif model_length != predic_distribution['model_feature_length']:
+            print 'Error: prediction and pre-trained word embeddings must ' \
+                + 'have same model_feature_length.'
+            sys.exit(2)
 
     # Load original dataset.
     df = pd.read_csv(dataset_path, header=0, \

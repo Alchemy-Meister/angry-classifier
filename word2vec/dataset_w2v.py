@@ -39,7 +39,7 @@ CLEAN_WORD_LIST = ['URL', 'MENTION']
 USAGE_STRING = 'Usage: dataset_w2v.py ' \
             + '[-d] [-g] [-i] [-v] [-s] [-h] [--sample_division] [--indent] ' \
             + '[--validation] [--spell_check] [--size=] [--split_ratio=] ' \
-            + '[--max_phrase_length=] [--google_model] [--delete-hashtags] ' \
+            + '[--max_phrase_length=] [--twitter_model] [--delete-hashtags] ' \
             + '[--help] path_to_dataset'
 
 CSV_COLUMNS = ['tweet_id', 'label', 'author', 'content']
