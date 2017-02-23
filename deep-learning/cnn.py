@@ -127,7 +127,7 @@ def generate_model(model_size, max_phrase_length, num_categories):
 
 def save_model(model, model_output_path, model_weights_output_path, model_size):
     json_string = model.to_json()
-    open(model_output_path + '/model-' + str(model_size) +'.json', 'w') \
+    open(model_output_path + '/model.json', 'w') \
         .write(json_string)
     model.save_weights(model_weights_output_path + '/model_weights-' + \
         str(model_size) +'.h5', overwrite=True)
