@@ -50,7 +50,7 @@ def json_numpy_obj_hook(dct):
         return np.frombuffer(data, dct['dtype']).reshape(dct['shape'])
     return dct
 
-def prepare_samples(piece_path, max_phrase_length):
+def prepare_samples(piece_path, max_phrase_length, model_length):
     X = []
     with open(piece_path, 'r') as piece:
         program = json.load(piece, object_hook=json_numpy_obj_hook)
@@ -60,10 +60,10 @@ def prepare_samples(piece_path, max_phrase_length):
     X = np.array(X)
 
     if K.image_dim_ordering() == 'th':
-        X = X.reshape(X.shape[0], 1, max_phrase_length, 300)
+        X = X.reshape(X.shape[0], 1, max_phrase_length, model_length)
         #input_shape = (1, img_rows, img_cols)
     else:
-        X = X.reshape(X.shape[0], max_phrase_length, 300, 1)
+        X = X.reshape(X.shape[0], max_phrase_length, model_length, 1)
         #input_shape = (img_rows, img_cols, 1)
     return X
 
@@ -271,7 +271,8 @@ def main(argv):
         dtype={COMPULSORY_COLUMNS[0]: np.int64})
 
     # Loads word embedding dataset.
-    X_predict = prepare_samples(word2vec_dataset_path, max_phrase_length)
+    X_predict = prepare_samples(word2vec_dataset_path, max_phrase_length, \
+        model_length)
 
     predicted_distribution = {'class': {}, 'category': {}}
 

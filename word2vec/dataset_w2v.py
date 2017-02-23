@@ -4,6 +4,7 @@
 from bs4 import BeautifulSoup
 import codecs
 from datetime import datetime
+import gc
 import getopt
 import HTMLParser
 import logging
@@ -398,6 +399,7 @@ def main(argv):
     del twitter_mention_regex
     del twitter_hashtag_regex
     del emoticon_regex
+    del stop_words
 
     if force_max_phrase_length != None:
         max_word_per_sentence = force_max_phrase_length
@@ -448,19 +450,20 @@ def main(argv):
         else:
             logger.info('Serializing JSON into train and test files.')
 
-        # Write train data to a JSON file.
-        serialize_sample(output_path + '_train.json', output, \
-            indent)
-        
-        # Resealse memory.
-        del output
-
         # Write test data to a JSON file.
         serialize_sample(output_path + '_test.json', \
             test_output, indent)
         
         # Resealse memory.
         del test_output
+        gc.collect()
+
+        # Write train data to a JSON file.
+        serialize_sample(output_path + '_train.json', output, \
+            indent)
+        
+        # Resealse memory.
+        del output
 
     else:
 

@@ -49,7 +49,7 @@ def json_numpy_obj_hook(dct):
         return np.frombuffer(data, dct['dtype']).reshape(dct['shape'])
     return dct
 
-def prepare_samples(piece_path, labels, max_phrase_length):
+def prepare_samples(piece_path, labels, max_phrase_length, model_size):
     X = []
     y = []
     with open(piece_path, 'r') as piece:
@@ -62,10 +62,10 @@ def prepare_samples(piece_path, labels, max_phrase_length):
     X = np.array(X)
 
     if K.image_dim_ordering() == 'th':
-        X = X.reshape(X.shape[0], 1, max_phrase_length, 300)
+        X = X.reshape(X.shape[0], 1, max_phrase_length, model_size)
         #input_shape = (1, img_rows, img_cols)
     else:
-        X = X.reshape(X.shape[0], max_phrase_length, 300, 1)
+        X = X.reshape(X.shape[0], max_phrase_length, model_size, 1)
         #input_shape = (img_rows, img_cols, 1)
     return X, y
 
@@ -172,15 +172,16 @@ def check_valid_dir(dir_name):
 def train(train_path, validation_path, model, labels, max_phrase_length, \
     model_output_path, model_weights_output_path, model_size):
     
-    X_train, y_train = prepare_samples(train_path, labels, max_phrase_length)
+    X_train, y_train = prepare_samples(train_path, labels, max_phrase_length, \
+        model_size)
     X_validation, y_validation = prepare_samples(validation_path, labels, \
-        max_phrase_length)
+        max_phrase_length, model_size)
 
     early_stopping = EarlyStopping(monitor=STOP_CONDITION, \
         min_delta=0, patience=PATIENCE, verbose=0, mode='auto')
     #TODO:Check how save_best_only works
     checkpoint = ModelCheckpoint(model_weights_output_path + '/{epoch:02d}-{' \
-        + STOP_CONDITION + ':.2f}-' + model_size + '.hdf5', \
+        + STOP_CONDITION + ':.2f}-' + str(model_size) + '.hdf5', \
         monitor=STOP_CONDITION, verbose=0, save_best_only=True, \
         save_weights_only=False, mode='auto')
 
@@ -201,7 +202,8 @@ def train(train_path, validation_path, model, labels, max_phrase_length, \
 def test(test_path, model, labels, max_phrase_length, output_path, model_size):
     # Using keras evaluation method,
     # just check if I am doing it right with SciKit.
-    X_test, y_test = prepare_samples(test_path, labels, max_phrase_length)
+    X_test, y_test = prepare_samples(test_path, labels, max_phrase_length, \
+        model_size)
 
     y_predict = model.evaluate([X_test, X_test, X_test], y_test, verbose=0, \
         batch_size=BATCH_SIZE)
@@ -379,8 +381,8 @@ def main(argv):
 
     # Execute test if target is test or all.
     if target == TARGETS[1] or target == TARGETS[2]:
-        test(test_path, merged, labels, max_phrase_length, results_output_path \
-            model_size)
+        test(test_path, merged, labels, max_phrase_length, \
+            results_output_path, model_size)
 
 if __name__ == '__main__':
     start_time = datetime.now()
