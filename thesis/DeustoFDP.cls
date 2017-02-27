@@ -47,7 +47,7 @@
 
 \fancypagestyle{phdthesis}{             % Redefine main page style
   \fancyhf{}
-  \fancyhead[RO]{\itshape\MakeUppercase{Proyecto Fin de Master}}
+  \fancyhead[RO]{\itshape\MakeUppercase{MASTER'S THESIS}}
   \fancyhead[LE]{\sffamily\itshape\thechapter. \leftmark}
   \fancyfoot[LE,RO]{\thepage}
   \renewcommand{\headrulewidth}{0pt}
