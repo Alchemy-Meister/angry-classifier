@@ -403,6 +403,7 @@ def main(argv):
 
     predicted_distribution = {}
 
+    # Calculates the accuracy per class.
     for matrix_class in matrix_classes.keys():
         manual_class = manual_labeled_tweets[manual_labeled_tweets[ \
             COMPULSORY_COLUMNS[3] ].str.match(matrix_class)]
@@ -422,6 +423,7 @@ def main(argv):
 
     print predicted_distribution
 
+    # Serializes prediction CSV
     df.to_csv(path_or_buf=os.path.join(dataset_result_output_path, \
         dataset_name + '.csv'), index=False, encoding='utf-8')
 
