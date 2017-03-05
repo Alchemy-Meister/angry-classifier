@@ -107,11 +107,14 @@ def main(argv):
     df = pd.read_csv(dataset_path, header=0, \
         dtype={COMPULSORY_COLUMNS[0]: np.int64})
 
-    manual_class_distribution = {}
+    df = df[~df[COMPULSORY_COLUMNS[3]].isnull()]
+    df_length = len(df.index)
 
+    manual_class_distribution = {}
     maximum_class = {'name' : '', 'value': 0}
 
-    # Prediction and evaluation for each classifier.
+    actual_y = df[COMPULSORY_COLUMNS[3]]
+
     for index, ordered_matrix_class in enumerate(ordered_matrix_classes):
 
         manual_class_distribution[ordered_matrix_class] = len(df[ \
@@ -124,58 +127,14 @@ def main(argv):
             maximum_class['value'] = manual_class_distribution[ \
                 ordered_matrix_class ]
 
-    print manual_class_distribution
-    print maximum_class
-
-    # Calculates accuracy per label.
-    for label, valid_instance_num in predic_distribution['classes'].iteritems():
-        num_predicted_label = float(predicted_distribution['class'][label])
-
-        print label + ' accuracy: ' + str(num_predicted_label \
-            / valid_instance_num)
-
-    print ''
-
-    # Calculates accuracy score per classifier.
-    for label, num_predicted_label in predicted_distribution['category'] \
-        .iteritems():
-
-        print label + ' classifier accuracy: ' + str(num_predicted_label \
-            / ( float(predic_distribution['classes'][label] \
-            + predic_distribution['classes']['no_' + label]) ))
-
-    print ''
-
-    # Adds the final classification column to the CSV.
-    df[result_col] = None
-
-    # Generates final classification according the 2x2 matrix classes.
-    for label, condition in matrix_classes.iteritems():
-        df.loc[((df[classifiers_name_str[0]] == condition[0]) \
-            & (df[classifiers_name_str[1]] == condition[1])) \
-            | ((df[classifiers_name_str[0]] == condition[1]) \
-            & (df[classifiers_name_str[1]] == condition[0])), result_col] \
-            = label
-
-    print predicted_distribution
-    del predic_distribution
-    print ''
-
-    print 'Dataset length: ' + str(len(df.index))
-    print ''
-
-    manual_labeled_tweets = df[~df[COMPULSORY_COLUMNS[3]].isnull()]
-
-    print 'Compared to manual classification'
-
-    y_predict = manual_labeled_tweets[result_col]
-    actual_y = manual_labeled_tweets[COMPULSORY_COLUMNS[3]]
-
-    for index, ordered_matrix_class in enumerate(ordered_matrix_classes):
-        y_predict = y_predict.replace(to_replace=ordered_matrix_class, \
+        actual_y = actual_y.replace(to_replace=ordered_matrix_class, \
             value=index)
 
-        actual_y = actual_y.replace(to_replace=ordered_matrix_class, \
+    y_predict = pd.Series([maximum_class['name'] for x in xrange(df_length)])
+
+    for index, ordered_matrix_class in enumerate(ordered_matrix_classes):
+
+        y_predict = y_predict.replace(to_replace=ordered_matrix_class, \
             value=index)
 
     t = time.localtime()
@@ -183,8 +142,6 @@ def main(argv):
 
     conf_matrix = confusion_matrix(actual_y, y_predict)
 
-    #Y_true, y_predict
-    conf_matrix = confusion_matrix(actual_y, y_predict)
     ConfusionMatrixDrawer(conf_matrix, classes=ordered_matrix_classes, \
         str_id=timestamp, title='Confusion matrix, without normalization', \
         folder=results_output_path)
@@ -215,32 +172,6 @@ def main(argv):
         encoding='utf-8') as file:
 
         file.write(ujson.dumps(results, indent=4))
-
-    predicted_distribution = {}
-
-    # Calculates the accuracy per class.
-    for matrix_class in matrix_classes.keys():
-        manual_class = manual_labeled_tweets[manual_labeled_tweets[ \
-            COMPULSORY_COLUMNS[3] ].str.match(matrix_class)]
-        
-        manual_class_num = len(manual_class.index)
-        predicted_class_num = len(manual_labeled_tweets[manual_labeled_tweets[ \
-            result_col ].str.match(matrix_class)].index)
-
-        correct_class_num = len(manual_class[ \
-            manual_class[COMPULSORY_COLUMNS[3]] == manual_class[result_col] ] \
-            .index)
-
-        predicted_distribution[matrix_class] = manual_class_num
-
-        print( '%s accuracy: %s' % \
-            (matrix_class, (float(correct_class_num) / manual_class_num)))
-
-    print predicted_distribution
-
-    # Serializes prediction CSV
-    df.to_csv(path_or_buf=os.path.join(dataset_result_output_path, \
-        dataset_name + '.csv'), index=False, encoding='utf-8')
 
 if __name__ == '__main__':
     start_time = datetime.now()
