@@ -1,63 +1,70 @@
-\documentclass{./styles/NUTMasterThesis}
+\documentclass{DeustoFDP}
+\usepackage[toc, acronym, nomain]{glossaries}
+\usepackage{verbments}
+\usepackage{placeins}
+\listofpyglistingsname{Algorithm Index}
 
-% XeLaTeX also requires specifying CJK fonts 
-%   (these must be TTF/OTF fonts installed on the computer)
-%
-% Japanese serif (Mincho) font - e.g. MS PMincho
-\setCJKmainfont{MS PMincho}
-% Japanese sans (Gothic) font - e.g. MS PGothic
-\setCJKsansfont{MS PGothic}
-% Japanese monospaced font - e.g. MS Gothic
-\setCJKmonofont{MS PGothic}
+\hypersetup{
+  pdfauthor={Jesús María Sesma Solance},
+  pdftitle={Automatic Detection of Repressed Anger from Text Messages},
+}
 
-\input{content/annex-acronyms}
+\bibliography{bibliography}
+\makeglossaries
+\input{contents/annex/acronyms}
+
+\begin{document}
+
+\frontmatter
+\pagestyle{plain}
+
+\begin{titlepage}
+  \newgeometry{left=0cm,right=0cm,bottom=0cm,top=0cm}\thispagestyle{empty}
+  \includegraphics{figures/frontpage-comp}
+  \restoregeometry
+\end{titlepage}
+\cleardoublepage
+
+\input{contents/0-abstract}
+
+\cleardoublepage\tableofcontents
+\cleardoublepage\listoffigures
+\cleardoublepage\listoftables
+\cleardoublepage\listofpyglistings
+
+\mainmatter
+\pagestyle{phdthesis}
+
+\input{contents/1-introduction}
+\input{contents/2-planning-and-methodology}
+\input{contents/3-state-of-art}
+\input{contents/4-development}
+\input{contents/5-research-framework}
+\input{contents/6-results}
+\input{contents/7-conclusion}
+\input{contents/8-self-assessment}
+
+\printbibliography[heading=bibintoc]
+\printglossary[type=\acronymtype]
+
+\appendix
+
+%\input{contents/extra/Acknowledgements}
+
+\backmatter
+
+\end{document}
+
+
+%\input{content/annex-acronyms}
 
 \bibliography{bibliography}
 \makeglossaries
 
-\begin{document}
+\appendix
 
-  \pagenumbering{gobble}
-  %
-  % First frontpage.
-  \begin{titlepage}
-      \newgeometry{left=0cm,right=0cm,bottom=0cm,top=0cm}
-      \begin{center}
-        \includegraphics[width=0.99\textwidth,height=0.99\textheight,keepaspectratio]{figures/frontpage}
-      \end{center}
-      \restoregeometry
+%\input{contents/extra/Acknowledgements}
 
-      \newgeometry{left=0cm,right=0cm,bottom=0cm,top=0cm}
-      \begin{center}
-        \includegraphics[width=0.99\textwidth,height=0.99\textheight,keepaspectratio]{figures/project-info}
-      \end{center}
-      \restoregeometry
-
-      \newgeometry{left=0cm,right=0cm,bottom=0cm,top=0cm}
-      \begin{center}
-        \includegraphics[width=0.99\textwidth,height=0.99\textheight,keepaspectratio]{figures/frontpage}
-      \end{center}
-      \restoregeometry
-  \end{titlepage}
-
-  \tableofcontents
-  \listoffigures
-  \listoftables
-
-  \null\newpage
-
-  \pagenumbering{arabic}
-
-  \input{content/1-Algorithms}
-
-  \clearpage
-
-  \begingroup
-  \raggedright
-  \sloppy
-    \printbibliography[heading=bibintoc]
-  \endgroup
-
-  \printglossary[type=\acronymtype, title=Acronyms, toctitle= Acronyms]
+\backmatter
 
 \end{document}
