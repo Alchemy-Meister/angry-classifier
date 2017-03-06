@@ -24,7 +24,7 @@ from collections import OrderedDict
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 CWD = os.getcwd()
 
-USAGE_STRING = 'Usage: cnn.py [-h] [--help] ' \
+USAGE_STRING = 'Usage: repressed-anger.py [-h] [--help] ' \
     + '[--dataset=path_to_original_dataset]' \
     + '[--anger_dir=path_to_anger_dir] ' \
     + '[--anger_model_weights=anger_weights_filename] ' \
@@ -158,7 +158,7 @@ def main(argv):
             sys.exit(0)
         if o == '--dataset':
             dataset_path = check_valid_path(a, 'dataset')
-            dataset_split_path = dataset_path.rsplit('/' ,1)
+            dataset_split_path = dataset_path.rsplit('/', 1)
             
             dataset_name = dataset_split_path[1].split('.csv')[0]
 
@@ -403,6 +403,7 @@ def main(argv):
 
     predicted_distribution = {}
 
+    # Calculates the accuracy per class.
     for matrix_class in matrix_classes.keys():
         manual_class = manual_labeled_tweets[manual_labeled_tweets[ \
             COMPULSORY_COLUMNS[3] ].str.match(matrix_class)]
@@ -422,6 +423,7 @@ def main(argv):
 
     print predicted_distribution
 
+    # Serializes prediction CSV
     df.to_csv(path_or_buf=os.path.join(dataset_result_output_path, \
         dataset_name + '.csv'), index=False, encoding='utf-8')
 
