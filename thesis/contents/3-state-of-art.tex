@@ -1,5 +1,45 @@
 \chapter{State of art}
 
-TODO
+Main activity: Paper reading
+
+Introduction to Sentiment Analysis.
+Relevant International Workshop found: SemEval
+→ Datasets repositories: Twitter as corpus, Amazon products reviews…
+→ Dataset labeling: CrowdFlower, Amazon Mechanical Turk.
+→ Word embedding: Word2vec, GloVe.
+→ Text classification features: N-grams based on Sentiment lexicon…
+→ Learning Methods: Supervised, Unsupervised, Distant…
+→ Deep Learning techniques: Convolutional NN, Recurrent NN, Deep Autoencoders…
+→ Classifiers: “Bag of Words”, Naive Bayes, Logistic Regression, SVM, NN, Clustering…
+→ Accuracy evaluation: Precision, Recall, F1-Score, Cross-validation…
+→ Trends: Best scoring teams used Deep Learning techniques.
+
+Differences between Sentiment and Emotion Analysis
+
+SemEval works on sentiment analysis, which focuses on binary or multiclass classification, being Positive, Neutral and Negative the most common one.
+This means:
+ None of the SemEval preprocessed datasets are valid for me. (Raw data may work for manual annotation)
+ The need of procedure adaptation to fit my research domain.
+E.g. Use Emotion lexicon, such as EmoLex or LIWC, instead of  those related to Sentiment.
+Need to focus the research on discover word features that help to classify anger in texts.
+E.g. Heavy Punctuation, Quotation Marks, Emoticons; Unigrams, among others.
+
+Next week work: Deep reading and prepare a Playground with small sample data.
+
+Read fundamental theory about classifiers such as SVN, Bayesian, KNN, Decision Tree.
+Urge test what has been learned in order to set the basic knowledge.
+→ Download and test WEKA’s basic functionalities for educational and research purpose. (Includes a No-Code-GUI, which makes it user friendly for initial testings)
+→ Use scikit-learn for following iterations of the classifier (More modern algorithms, better memory management, Python development environment...)
+Further reading about Emotion classification techniques and investigate about repressed anger in English texts. 
+Multiclass angry classification?
+
+Future work: Deep Learning
+
+Depending on the generated dataset (size and labeled/unlabeled) the project could opt for a DL based classifier.
+Could score better results in the benchmarking.
+→ To gather large amount of data for each class is compulsory solve the overfitting problem. (Detection and prevention by using Cross-validation)
+→ If the dataset is not completely labeled weakly (distant) supervised learning could be applied.
+→ Theano and Keras have proved a DL frameworks to perform well.
+
 
 \input{contents/3-state-of-art/1-algorithms}

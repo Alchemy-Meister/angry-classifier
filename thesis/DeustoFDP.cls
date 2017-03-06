@@ -84,7 +84,7 @@
 \titleformat*{\subsection}{\large\bfseries\sffamily}
 \titleformat*{\subsubsection}{\large\bfseries\sffamily}
 
-\RequirePackage{hyperref}               % Package for introducing hyperlinks in the document
+\RequirePackage{hyperref}               % Package for introducing hyperlinks in the documentH
 \hypersetup{
   unicode=true,
   bookmarksopen,
@@ -92,6 +92,7 @@
   plainpages=false,
   pdfborder={0 0 0},
 }
+
 \RequirePackage{microtype}              % Package that includes microtyping
 \RequirePackage{flafter}                % Do not allow floating objects going backwards
 
