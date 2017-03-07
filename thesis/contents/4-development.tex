@@ -292,6 +292,14 @@ Candidate model is limited to words with up to 2 editions, correcting splits, de
 The language model estimates the probability of a words by counting the number of appearance. The tests runs on a dictionary that uses Project Gutenberg’s free eBooks, Wiktionary most frequents words\cite{WiktionaryFL} and \acrfull{bnc} \cite{bncFLAdamK} (Model side ~6Mb.)
 The error models prioritizes the original word if it is known, the the list of words known with one modification, followed by the list of words known with two modifications and finally the original word if it is unknown.
 
+Spell checker result using the Big.txt Language Model that Norving Provides.
+51\% of 270 correct (35\% unknown) at 37 words per second
+53\% of 400 correct (32\% unknown) at 35 words per second
+
+Using the Language Model I generated.
+75\% of 270 correct (5\% unknown) at 64 words per second 
+69\% of 400 correct (7\% unknown) at 63 words per second
+
 Making some tests
 
 I tested spell correction with the crowdflower dataset. Checking the word that were not numerical. Whenever the spell checker modified a word I printed into the screen so I could do a manual comparison.

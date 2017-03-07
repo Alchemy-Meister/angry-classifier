@@ -89,8 +89,12 @@ def words(text): return re.findall(r'\w+', text.lower())
 
 # Generates word frequency string form a Counter() object.
 def count_dict_to_str(count_dict):
-    return ''.join([word_set[0].decode('utf-8') + ' ' + str(word_set[1]) + '\n' \
-        for word_set in count_dict.iteritems()])[:-1]
+    try:
+        return ''.join([word_set[0].decode('utf-8') + ' ' + str(word_set[1]) + '\n' \
+            for word_set in count_dict.iteritems()])[:-1]
+    except:
+        return ''.join([word_set[0] + ' ' + str(word_set[1]) + '\n' \
+            for word_set in count_dict.iteritems()])[:-1]
 
 def update_dict(counter_dict, word, count):
     if not word.isdigit():

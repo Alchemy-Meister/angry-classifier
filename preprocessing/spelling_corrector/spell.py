@@ -15,31 +15,40 @@ import codecs
 from collections import Counter
 from math import log10
 
+WORDS = Counter()
 
-def words(text): return re.findall(r'\w+', text.lower())
+# Filter to remove words with an appearance lower than defined.
+FILTER_NUMBER = 4000
 
 script_dir = os.path.dirname(__file__)
 model_rel_path = 'language_model/english (wf)'
 model_abs_path = os.path.join(script_dir, model_rel_path)
-
-WORDS = Counter()
 
 with codecs.open(model_abs_path, 'r', 'utf-8') as file:
 
     for line in file.readlines():
         word_count = line.rsplit(' ', 1)
         
-        word = word_count[0]
+        try:
+            word = str(word_count[0])
+        except:
+            word = word_count[0]
         count = int(word_count[1])
 
-        if word not in WORDS:
-            WORDS[word] = count
-        else:
-            WORDS[word] += count
+        if count >= FILTER_NUMBER:
+            if word not in WORDS:
+                WORDS[word] = count
+            else:
+                WORDS[word] += count
+
+def words(text): return re.findall(r'\w+', text.lower())
+
+# Uncomment to use Norving's Language Model.
+#WORDS = Counter(words(open('big.txt').read()))
 
 def P(word, N=sum(WORDS.values())): 
     "Probability of `word`."
-    return WORDS[word] / N
+    return float(WORDS[word]) / N
 
 def correction(word): 
     "Most probable spelling correction for word."
@@ -47,7 +56,7 @@ def correction(word):
 
 def candidates(word): 
     "Generate possible spelling corrections for word."
-    return (known([word]) or known(edits1(word)) or known(edits2(word)) \
+    return set(known([word]) or known(edits1(word)) or known(edits2(word)) \
         or [word])
 
 def known(words): 
@@ -85,15 +94,19 @@ def spelltest(tests, verbose=False):
     n = len(tests)
     for right, wrong in tests:
         w = correction(wrong)
-        good += (w == right)
+        good += int(w == right)
         if w != right:
-            unknown += (right not in WORDS)
+            found = False
+            for currentWord in WORDS:
+                if currentWord == right:
+                    found = True
+            unknown += int(not found)
             if verbose:
                 print('correction({}) => {} ({}); expected {} ({})'
                       .format(wrong, w, WORDS[w], right, WORDS[right]))
     dt = time.clock() - start
     print('{:.0%} of {} correct ({:.0%} unknown) at {:.0f} words per second '
-          .format(good / n, n, unknown / n, n / dt))
+          .format(float(good) / n, n, float(unknown) / n, float(n) / dt))
     
 def Testset(lines):
     "Parse 'right: wrong1 wrong2' lines into [('right', 'wrong1'), ('right', 'wrong2')] pairs."
