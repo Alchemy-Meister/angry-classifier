@@ -171,7 +171,7 @@ TODO: Implement a logger to check if the tweet could not be downloaded due to un
 
 Started implementing the CNN
 
-Started implementing the Convolution Neural Network (CNN) by using Keras python module for Deep Learning.
+Started implementing the Convolution Neural Network (CNN) by using Keras\cite{keras} python module for Deep Learning.
 Just need to make some adaptations to the way it parses the word2vec values to be able to test it.
 I also investigate how to make full use of the dual graphic card setup of my home server. According to literature I have read there are two techniques to distribute the workflow:
 Data parallelization
@@ -280,7 +280,7 @@ CNN only work with word embeddings, and do not support the use of other features
 
 Spelling check (1)
 
-Last week I talked about a python module called Pyenchant, which provides a function suggest(word) returning an ordered list with the possible corrected words. However it’s accuracy is not very high. Therefore I researched new approaches and found an basic idea proposed from Peter Norvig, Director of Research at Google Inc. He explained that Google search engine uses probability theory to choose the most likely spelling correction for a word (argmax).
+Last week I talked about a python module called Pyenchant, which provides a function suggest(word) returning an ordered list with the possible corrected words. However it’s accuracy is not very high. Therefore I researched new approaches and found an basic idea proposed from Peter Norvig\cite{PeterNorvigSpell}, Director of Research at Google Inc. He explained that Google search engine uses probability theory to choose the most likely spelling correction for a word (argmax).
 argmaxc ∈ candidates P(c) P(w|c)
 C ∈ candidates: Candidates model.
 P(c): Language model.
@@ -289,7 +289,7 @@ P(w|c): Error model.
 Spelling check (2)
 
 Candidate model is limited to words with up to 2 editions, correcting splits, deletes, transposes, replaces and insertion errors.
-The language model estimates the probability of a words by counting the number of appearance. The tests runs on a dictionary that uses Project Gutenberg’s free eBooks, Wiktionary most frequents words and British National Corpus (Model side ~6Mb.)
+The language model estimates the probability of a words by counting the number of appearance. The tests runs on a dictionary that uses Project Gutenberg’s free eBooks, Wiktionary most frequents words\cite{WiktionaryFL} and \acrfull{bnc} \cite{bncFLAdamK} (Model side ~6Mb.)
 The error models prioritizes the original word if it is known, the the list of words known with one modification, followed by the list of words known with two modifications and finally the original word if it is unknown.
 
 Making some tests
@@ -301,7 +301,7 @@ The next step I made was investigating about english slang used on twitter and i
 Improving the model and twitter slangs (1)
 
 Since the model does not contemplate slang terms found on tweets I have searched for a dictionary of slang with their meaning, so that it can be replaced from the original text during the preprocessing.
-To improve the model first I searched for some n-gram database. Google has a huge that includes 5-grams (~88Gb), However the access to this resource costs 150 USD for non-members. Therefore, I downloaded all the English Ebooks from Project Gutenberg as for 2014 (~42Gb). After solving encoding errors in some file names I start the eBook preprocessing.
+To improve the model first I searched for some n-gram database. Google has a huge that includes 5-grams (~22Gb), However the access to this resource costs 150 USD for non-members\cite{LDCGoogle5-gram}. Therefore, I downloaded all the English Ebooks from Project Gutenberg as for 2014 from Kiwix harvester\cite{kiwix} (~42Gb) publicly available from \url{http://download.kiwix.org/zim/gutenberg/gutenberg_en_all_10_2014.zim}. After solving encoding errors in some file names I start the eBook preprocessing.
 
 Improving the model and twitter slangs (2)
 
@@ -326,9 +326,9 @@ This way if the program has to run a second time it does not have to start all t
 
 Adding twitter scope words to spelling model
 
-After downloading 36,173 English eBook from Project Gutenberg, and the most general used word from wiktionary and oxford corpus I decided to add more content that its form could fit better to the written style used on twitter messages. Therefore I decided to add to the model the following list of most used words:
+After downloading 36,173 English eBook from Project Gutenberg\cite{projectGutenberg}, and the most general used word from wiktionary and oxford corpus I decided to add more content that its form could fit better to the written style used on twitter messages. Therefore I decided to add to the model the following list of most used words:
 TV programs words from Wiktionary.
-Film series from Opensubtitles.
+Film series from Opensubtitles extracted by Hermit Dave\cite{openSubtitlesFL}.
 Contemporary fiction from Wiktionary.
 
 Merge Datasets
