@@ -125,6 +125,7 @@ def main(argv):
     size = None
     force_max_phrase_length = None
     use_twitter_model = False
+    preprocess_only = False
     task_description = 'Calculating Word2Vec values'
 
     model_rel_path = '/model/GoogleNews-vectors-negative300.bin'
@@ -136,9 +137,10 @@ def main(argv):
     try:
         opts, args = getopt.getopt(argv,'divtsh',['sample_division', 'indent', \
             'validation', 'size=', 'split_ratio=', 'spell_check', 'help', \
-            'max_phrase_length=', 'delete-hashtags', 'twitter_model'])
+            'max_phrase_length=', 'delete-hashtags', 'twitter_model',\
+            'preprocess_only'])
     except getopt.GetoptError:
-        print 'ERROR: Unknown parameter. %s' % USAGE_STRING 
+        print 'ERROR: Unknown parameter. %s' % USAGE_STRINGd
         sys.exit(2)
 
     for o, a in opts:
@@ -188,6 +190,8 @@ def main(argv):
             model_rel_path = '/model/word2vec_twitter_model.bin'
             global NUM_MODEL_FEATURES
             NUM_MODEL_FEATURES = 400
+        elif o == '--preprocess_only':
+            preprocess_only = True
 
     if split_ratios_lenght != 0:
         if validation and split_ratios_lenght != 3:
@@ -216,9 +220,6 @@ def main(argv):
             check_valid_dir(os.path.join(dataset_path, 'json/'))
             output_path = os.path.join(dataset_path, 'json/' \
                 + source_path[1].rsplit('.csv')[0])
-
-            if spell_check:
-                output_path = output_path + '_spell'
 
             # Loads CSV into dataframe.
             df = pd.read_csv(args, header=0, usecols=LOAD_COLUMNS)
@@ -407,74 +408,75 @@ def main(argv):
     distribution['max_phrase_length'] = max_word_per_sentence
     distribution['model_feature_length'] = NUM_MODEL_FEATURES
 
-    for train_index in trange(len(output), desc=task_description, \
-        total=len(output)):
+    if not preprocess_only:
+        for train_index in trange(len(output), desc=task_description, \
+            total=len(output)):
 
-        process_sample(model, output, train_index, max_word_per_sentence, \
-            spell_check)
+            process_sample(model, output, train_index, max_word_per_sentence, \
+                spell_check)
 
-    # Optional if statement to hide console progress bar when not needed.
-    if divide:
-        for val_test_index in trange(len(validation_or_test_output), \
-            desc=task2_description, total=len(validation_or_test_output)):
+        # Optional if statement to hide console progress bar when not needed.
+        if divide:
+            for val_test_index in trange(len(validation_or_test_output), \
+                desc=task2_description, total=len(validation_or_test_output)):
 
-            process_sample(model, validation_or_test_output, \
-                val_test_index, max_word_per_sentence, spell_check)
+                process_sample(model, validation_or_test_output, \
+                    val_test_index, max_word_per_sentence, spell_check)
 
-        if validation:
-            for test_index in trange(len(test_output), \
-                desc='Calculating Word2Vec test values', \
-                total=len(test_output)):
+            if validation:
+                for test_index in trange(len(test_output), \
+                    desc='Calculating Word2Vec test values', \
+                    total=len(test_output)):
 
-                process_sample(model, test_output, test_index, \
-                    max_word_per_sentence, spell_check)
+                    process_sample(model, test_output, test_index, \
+                        max_word_per_sentence, spell_check)
 
     # Release memory.
     del model
     del df
 
     serialization_start_time = datetime.now()
+    if not preprocess_only:
+        if divide:
+            if validation:
+                logger.info('Serializing JSON into train, ' \
+                    + 'validation and test files.')
+                
+                # Write validation data to a JSON file.
+                serialize_sample(output_path + '_validation.json', \
+                    validation_or_test_output, indent)
+                
+                # Resealse memory.
+                del validation_or_test_output
 
-    if divide:
-        if validation:
-            logger.info('Serializing JSON into train, ' \
-                + 'validation and test files.')
-            
-            # Write validation data to a JSON file.
-            serialize_sample(output_path + '_validation.json', \
-                validation_or_test_output, indent)
+            else:
+                logger.info('Serializing JSON into train and test files.')
+
+            # Write test data to a JSON file.
+            serialize_sample(output_path + '_test.json', \
+                test_output, indent)
             
             # Resealse memory.
-            del validation_or_test_output
+            del test_output
+            gc.collect()
+
+            # Write train data to a JSON file.
+            serialize_sample(output_path + '_train.json', output, \
+                indent)
+            
+            # Resealse memory.
+            del output
 
         else:
-            logger.info('Serializing JSON into train and test files.')
 
-        # Write test data to a JSON file.
-        serialize_sample(output_path + '_test.json', \
-            test_output, indent)
-        
-        # Resealse memory.
-        del test_output
-        gc.collect()
+            logger.info('Serializing JSON into a file.')
 
-        # Write train data to a JSON file.
-        serialize_sample(output_path + '_train.json', output, \
-            indent)
-        
-        # Resealse memory.
-        del output
+            # Write data to a JSON file.
+            serialize_sample(output_path + '.json', \
+                output, indent)
 
-    else:
-
-        logger.info('Serializing JSON into a file.')
-
-        # Write data to a JSON file.
-        serialize_sample(output_path + '.json', \
-            output, indent)
-
-        # Resealse memory.
-        del output
+            # Resealse memory.
+            del output
 
     with codecs.open(output_path + DISTRIBUTION + '.json', 'w', \
             encoding='utf-8') as dout:
