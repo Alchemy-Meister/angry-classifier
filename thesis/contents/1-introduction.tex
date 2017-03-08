@@ -1,1 +1,106 @@
 \chapter{Introduction}
+
+\begin{itemize}
+  \item Introduction
+  \begin{itemize}
+    \item Get the important points of the state of art referring to sentiment analysis, repressed anger detection.
+    \item Explain the hypothesis to be worked out in the thesis.
+  \end{itemize}
+
+  \item Planning and Methodology [OK]
+  \begin{itemize}
+    \item Explain the plan. [OK]
+    \item Explain the methodology. [OK]
+    \item Show the schedule. [OK]
+  \end{itemize}
+
+  \item State of art
+  \begin{itemize}
+    \item Explain that sentiment analysis is.
+    \item Explain what emotion analysis is, compared to previous point.
+    \item Explain previous work.
+    \begin{itemize}
+      \item Previous work in anger detection.
+      \item Previous work in irony detection.
+    \end{itemize}
+    \item Explain the that the project will focus on resolve the issue as a text classification problem.
+    \begin{itemize}
+      \item Classification Techniques 
+      \item Fundamentals of Classification 
+      \item General classification problem solving
+      \item Explain the algorithms I used to make tests in WEKA.
+      \item Explain Deep Learning.
+      \begin{itemize}
+        \item Explain Convolutional neural networks.
+      \end{itemize}
+    \end{itemize}
+  \end{itemize} 
+
+  \item Development
+  \begin{itemize}
+    \item Early development on the exploration phase.
+    \begin{itemize}
+      \item WEKA text classification testing.
+    \end{itemize}
+    \item Explain that on SemEval they said that the best scoring system were using DL and is becoming trending. General Problem Solving techniques (NPL) in Deep Leaning perform better that those that focus on resolving in depth focusing on the topic.
+    \begin{itemize}
+      \item Change to Deep Learning Development.
+      \item Explain the usage of architecture that Aritz uses. (Previously explained in SoA)
+      \item Explain the process to detect repressed anger. (The system I made starting from dataset merging, ending with merge of 2 classification output.) Simple diagram.
+      \begin{itemize}
+        \item Dataset searching and generation.
+
+          --> Developed a tweet downloader for IDs.
+
+        \item Word2vec (needed for CNN)
+
+          --> Model used for Word2vec.
+          
+          --> Spell checking
+          
+          --> Slang dictionaries (difficulty on when to process the word. Detect Slang)
+          
+          --> Usage of Stopwords.
+
+        \item CNN classifiers
+
+          --> hyperparams used.
+
+        \item Classification output merge.
+        
+        --> Due to the labels in the dataset cannot use ensemble learning and use a 2x2 matrix to match everything.
+        
+        --> Develop a automatic Google forms and how to process them back to the original dataset.
+      \end{itemize}
+    \end{itemize}
+  \end{itemize}
+
+  \item Research Framework
+  \begin{itemize}
+    \item Searching datasets, or create one, automatically.
+    \item Manual labeling used to final prediction process.
+  \end{itemize}
+
+  \item Results
+  \begin{itemize}
+    \item Google Model
+    \begin{itemize}
+      \item Explain the final result plus each classification independently.
+    \end{itemize}
+    \item Twitter Model
+    \begin{itemize}
+      \item Explain the final result plus each classification independently. 
+    \end{itemize}
+    \item Spell checking
+  \end{itemize}
+
+  \item Conclusion and Future Work
+    \begin{itemize}
+      \item Different approach now that manual label data is obtained.  (Semi-supervised learning) 
+    \end{itemize}
+  
+  \item Self-assessment
+  \begin{itemize}
+    \item Check Aritz writing.
+  \end{itemize}
+\end{itemize}
