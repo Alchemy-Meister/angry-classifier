@@ -313,7 +313,7 @@ To improve the model first I searched for some n-gram database. Google has a hug
 
 Improving the model and twitter slangs (2)
 
-Since all the eBooks are stored as HTML document, I removed all the HTML tags from the texts, to improve later on model generation performance, it took 1 hour 38 mins to remove all the HTML tags.
+Since all the eBooks are stored as \acrfull{html} document, I removed all the \acrshort{html} tags from the texts, to improve later on model generation performance, it took 1 hour 38 mins to remove all the \acrshort{html} tags.
 I programmed a python module that take the requested model size as argument and concatenates as many eBooks until reaching requested size.
 The Spell checker now read the model generated from this book concatenation, but next step would be to generate a word counter and store this document as a model instead to improve even more spell checker performance.
 
@@ -322,13 +322,13 @@ Future work
 Put all spelling related modules and slang dictionaries together and test on crowdflower dataset to check if performance improves.
 Continue emoticon and emotion words feature extraction.
 Continue implementing weight variable Convolutional Neural Network training.
-Continue implementing SVM classifier.
+Continue implementing \acrshort{svm} classifier.
 
 Spell checking model redesigned
 
-On the previous I stated that I programmed a python module that removes the HTML tags from Project Gutenberg's eBooks and concatenates it into a single document to. Last week I redesigned this module.
+On the previous I stated that I programmed a python module that removes the \acrshort{html} tags from Project Gutenberg's eBooks and concatenates it into a single document to. Last week I redesigned this module.
 Now, the program search for word frequency files from eBooks and generates a single dictionary with the word occurrences from each document.
-If the word frequency file does not exists for a certain eBook it process the document by checking if it contains HTML tags and if so remove them, overwriting the original file in the process.
+If the word frequency file does not exists for a certain eBook it process the document by checking if it contains \acrshort{html} tags and if so remove them, overwriting the original file in the process.
 Calculates the word frequency for that eBook and saves it into a file while at the same time updating the global dictionary that contains the words for all documents.
 This way if the program has to run a second time it does not have to start all the process from the beginning.
 

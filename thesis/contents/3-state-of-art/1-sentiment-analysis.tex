@@ -27,29 +27,30 @@ According to \cite{montoyo2012subjectivity}, subjectivity classification aims to
 \subsubsection{Sentiment classification}
 \label{subsubsection:sentiment_classification}
 
-Sentiment classification consist in determine the orientation of a sentiment of a given text into two or more classes. This classification has been performed in multiple classes, such as, binary (positive or negative), ternary (positive, neutral and negative), n-ary, \cite{nakov2016semeval}, among others.
+Sentiment classification consist in determine the orientation of a sentiment of a given text into two or more classes. This classification has been performed in multiple classes, such as, binary (positive or negative), ternary (positive, neutral and negative), n-ary \cite{nakov2016semeval}, among others.
 
 \subsubsection{Review usefulness measurement}
 \label{subsubsection:review_usefulness_measurement}
 
-TODO
+Review usefulness measurement tends sometimes be confused with opinion spam detection, however there are some slight differences. Of course false review are always rated as useless, as their objective is just to boast or ridicule a product. Although, there are also bad reviews that might not necessary be spam, as they reflect the honest opinion of the author. Thus, this subtask complement the opinion spam detection.
 
 \subsubsection{Opinion spam detection}
 \label{subsubsection:opinion_spam_detection}
 
-TODO
+In order to boost sales, some companies have invested on unmoral marketing techniques that consist in publishing false reviews about their own products or from the competence. In order to detect fake reviews, researches have focus their effort on (a) analyzing the content of the review, finding hidden lies by using \acrshort{nlp}, (b) meta-data of the review, such as start rating, author information, date of writing, among many others \cite{hu2011fraud}, however this information sometimes is not accessible, and (c) comparison with real-life information about the product. 
 
 \subsubsection{Lexicon creation}
 \label{subsubsection:lexicon_creation}
 
-TODO
+A lexicon is a collection of words that determines the polarity of each one of them. Lexicons are used as an approach to detect the sentiment polarity of a given document \cite{kaji2007building}.
 
 \subsubsection{Aspect extraction}
 \label{subsubsection:aspect_extraction}
 
-TODO
+Aspect extraction is a key to detect author's opinion regarding various characteristics of a product based on the collection of opinion words and entities and identification and extraction of the aspects of those entities \cite{mukherjee2012aspect}.
 
-To solve all these problems in the most efficient way, multiple approaches have been conducted, such as \cite{tripathy2016classification} ; \cite{mullen2004sentiment} or \cite{pouransari2014deep}. The figure \ref{fig:sentiment_analysis_approaches} illustrates which techniques have been used for each previously named categories.
+\subsection{Techniques}
+\label{subsec:sentiment_analysis_techniques}
 
 \begin{figure}[!htp]
   \center
@@ -58,12 +59,11 @@ To solve all these problems in the most efficient way, multiple approaches have 
   \label{fig:sentiment_analysis_approaches}
 \end{figure}
 
+To solve all these problems in the most efficient way, multiple approaches have been conducted, such as \cite{tripathy2016classification}; \cite{mullen2004sentiment} or \cite{pouransari2014deep}. The figure \ref{fig:sentiment_analysis_approaches} illustrates which techniques have been used for each previously named tasks.
+
 \FloatBarrier
 
-\subsection{Techniques}
-\label{subsec:sentiment_analysis_techniques}
-
-TODO\cite{thakkar2015approaches}
+The figure \ref{fig:sentiment_analysis_techniques} collects the most common techniques used for \acrshort{sa} based the survey conducted by Walaa Medhat et al. (2014). For the purpose of this project, we will focus on making an introduction in those approaches related to sentiment classification, more precisely on \acrfull{ml}, lexicon-based and hybrid approaches.
 
 \begin{figure}[!htp]
   \center
@@ -71,3 +71,20 @@ TODO\cite{thakkar2015approaches}
   \caption{Sentiment analysis techniques\cite{medhat2014sentiment}.}
   \label{fig:sentiment_analysis_techniques}
 \end{figure}
+
+\FloatBarrier
+
+\subsubsection{Machine learning approach}
+\label{subsubsec:techniques_machine_learning}
+
+TODO
+
+\subsubsection{Lexicon based approach}
+\label{subsubsec:techniques_lexicon_based}
+
+Sentiment analysis based on lexicon approach consist on the use of a collection of words, a dictionary, that contain a pre-tagged lexicon to classify a given text. The input document is tokenized and, thus, every token is compared with the lexicon forming the dictionary. Depending on how the lexicon is defined, the result of the comparison can be either positive or negative. If positive match is given, the total score of the text classification is increased, if negative match occurs, then the score decreases. Although this technique could be considered simplistic, some simplistic tests \cite{hatzivassiloglou2000effects} have proven to be successful in achieving high precision. 
+
+\subsubsection{Hybrid approach}
+\label{subsubsec:techniques_hybrid}
+
+TODO \cite{thakkar2015approaches}
