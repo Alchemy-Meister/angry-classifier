@@ -63,7 +63,7 @@ To solve all these problems in the most efficient way, multiple approaches have 
 
 \FloatBarrier
 
-The figure \ref{fig:sentiment_analysis_techniques} collects the most common techniques used for \acrshort{sa} based the survey conducted by Walaa Medhat et al. (2014). For the purpose of this project, we will focus on making an introduction in those approaches related to sentiment classification, more precisely on \acrfull{ml}, lexicon-based and hybrid approaches.
+The figure \ref{fig:sentiment_analysis_techniques} collects the most common techniques used for \acrshort{sa} based the survey conducted by Walaa Medhat et al. (2014). For the purpose of this project, we will focus on making an introduction to those approaches related to sentiment classification, more precisely to \acrfull{ml}, lexicon-based and hybrid approaches.
 
 \begin{figure}[!htp]
   \center
@@ -77,7 +77,15 @@ The figure \ref{fig:sentiment_analysis_techniques} collects the most common tech
 \subsubsection{Machine learning approach}
 \label{subsubsec:techniques_machine_learning}
 
-TODO
+Thanks to the good performance machine learning techniques have proved to achieve, more and more researches have gain interest on this technology. The classification process (see \ref{sec:algorithms}) used, consist on extracting a series of features vectors from the dataset and a to create a model that is able to identify different patters among theses features. The selection of relevant features is key as it directly affect the performance the model can score. Some good known features for model generation are based on n-grams, such as unigrams, bi-grams and tri-grams \cite{furnkranz1998study}.
+
+\begin{enumerate}[label=\textbf{\arabic*}.]
+  \item \textbf{Data gathering:} During this phase, first publicly available datasets are searched from related literature. Then if needed, to complement this data, an analysis of the social media that contains information regarding the research topic is conducted. After analyzed the sources from which data can be extracted, a crawler adapted to deal with those networks is used to collect the data. This data, usually mostly or partially, requires to be labeled with a predefined set of classes, a task generally done by crowd-sourcing.
+  \item \textbf{Pre-processing:} Most of the raw data obtained from social media contains information is not relevant or cannot be directly processed by the classifier. In this step, tasks like word spell checking, \acrfull{url} and hash-tags removal, keyword extraction, language filtering, tokenization, among many others are carried out.
+  \item \textbf{Classifier training:} With the dataset most commonly split into training, validation and test, the training and validation sets will be provided as an input to the classification algorithm as the learning process, which concludes with the generation of a model.
+  \item \textbf{Classification:} With the previously generated model on the learning process, the classifier can now be used to predict new data.
+  \item \textbf{Result evaluation:} To measure how accurate the learning algorithm performed, the output of the system is compared with dataset labels by means of a defined evaluation function and representation format.
+\end{enumerate}
 
 \subsubsection{Lexicon based approach}
 \label{subsubsec:techniques_lexicon_based}
@@ -87,4 +95,4 @@ Sentiment analysis based on lexicon approach consist on the use of a collection 
 \subsubsection{Hybrid approach}
 \label{subsubsec:techniques_hybrid}
 
-TODO \cite{thakkar2015approaches}
+As \cite{thakkar2015approaches} suggest, both, machine learning and lexicon based approaches have their advantages and disadvantages. Thus, researchers have tried merging different methods to order to find more precise and efficient ways of classify sentiments. The combination of techniques are variated that include architectures that mix lexicons to automatically label data that is used as a learning input into a Naive Bayes classifier as shown in \cite{pak2010twitter}; the author of \cite{khan2014tom} uses the combination of three classifiers, enhanced emoticon classifier, improved polarity classifier and a SentiWordNet classifier to determinate the polarity of a given tweet or \cite{prabowo2009sentiment}, which used multiple rule based classifiers approaches combined with \acrshort{svm} executed on multiple hybrid sequential executions on a semi-automatic dataset.
