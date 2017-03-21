@@ -1,5 +1,21 @@
 \chapter{Proposed System}
 
+The aim of this chapter is to explain in detail the steps followed to conduct the experiment first introduced in section \ref{}.
+
+\cite{roberts2012empatweet}
+
+As stated on last sub-meeting, SemEval Workgroup's\cite{SemEvalPortal} labeled dataset doesn't work for the scope of this research. They focus on classifying polarity of texts messages (positive, negative and neutral classes)
+
+I analyzed the technique trends from SemEval, the international workshop for semantic evaluation. On 2016 for sentiment analysis task 4 they stated the following: 
+
+“A general trend that emerges from SemEval-2016 Task 4 is that most teams who were ranked at the top in the various subtasks used deep learning, including convolutional NNs, recurrent NNs, and (general purpose or task-specific) word embeddings.”
+
+“In many cases, the use of these techniques allowed the teams using them to obtain good scores even without tuning their system to the specifics of the subtask at hand […] Conversely, several teams that have indeed tunned their system to the specifics of the subtask at hand, but have not used deep learning techniques, have performed less satisfactorily. This is a further confirmation of the power of deep learning techniques for tweet sentiment analysis.”
+
+Based on these statements I decided to design my solution based on deep learning techniques.
+
+\section{Data Collection}
+
 SMILE Twitter emotion dataset\cite{wang2016smile}
 
 "If you provide Content to third parties, including downloadable datasets of Content or an API that returns Content, you will only distribute or allow download of Tweet IDs and/or User IDs."\cite{twitterTOS}
@@ -10,9 +26,7 @@ Twitter sentiment datasets are publicly available in CrowdFlower's ``Data for Ev
 
 Wang dataset\cite{wang2012harnessing}
 
-As stated on last sub-meeting, SemEval Workgroup's\cite{SemEvalPortal} labeled dataset doesn't work for the scope of this research. They focus on classifying polarity of texts messages (positive, negative and neutral classes) 
-Time spending activity: Search for emotion related dataset.
- Found SMILE dataset, containing 3085 Twitter messages.
+Found SMILE dataset, containing 3085 Twitter messages.
 Classifies tweets into the following 7 classes: Anger, Disgust, Happy, Sad, Surprise, No-code and Not-relevant.
 
 SMILE Dataset problems
@@ -57,6 +71,12 @@ Conclusions:
 Might be a good sample to do a binary classification test:
 
 E.g. 1421 Anger / 1421 Not Anger (others)
+
+\section{Pre-processing}
+
+\section{Learning process}
+
+\section{Prediction}
 
 Understanding WEKA ARFF file format
 

@@ -20,7 +20,12 @@ TODO
 
 TODO
 
-\cite{sulis2016figurative}
-\cite{carvalho2009clues}
+Defend the idea of using irony and sarcasm as the same, since sarcasm is a subset of irony.
+``In linguistics, verbal irony is sometimes used as a synonym of sarcasm \cite{giora2013negation}; \cite{giora2015defaultness} and \cite{giora2015default}. According to the literature, boundaries in meaning between irony, sarcasm et similia are fuzzy \cite{bosco2013developing}. While some authors consider irony as an umbrella term covering also sarcasm \cite{gibbs1991psychological}, \cite{wilson2006pragmatics} and \cite{kreuz1993empirical}, others provide insights for a separation \cite{filatova2012irony}.''
 
-``Another issue concerns boundaries among irony and other figurative devices, such as sarcasm, satire or humor. According to literature, boundaries in meaning between different types of irony are fuzzy [Gibbs and Colston, 2007], and this makes more suitable annotations where different types of irony are not distinguished, as the one adopted in Senti–TUT''\cite{bosco2013developing}.
+
+Survey of the approaches used to detect sarcasm. Three approaches, rule-based, statistical approaches, learning approaches. Inside Learning approaches there are architectures based on deep learning \cite{joshi2016automatic}.
+
+Detection of Portuguese irony using pattern matching rules such as diminutive forms, interjections, verb morphology, heavy punctuation, quotation marks, laughter expressions, among others. Classifying the sentences as ironic, not ironic, undecided and ambiguous. They concluded stating that the best patters for irony recognition are quote and laugh obtaining a precision of 68.29\% and 85.40\% respectively \cite{carvalho2009clues}.
+
+Semi-supervised techniques for sarcastic sentences in Twitter and Amazon, 5.9 million unique tweets, use of \#sarcasm hashtag, removal of link, users and hashtags, pattern extraction, such as \acrfullpl{hfw}, \acrfullpl{cw}, punctuation based features to create single entry feature vectors. classification range of 1 to 5 to measure the presence of sarcasm, with a \acrfull{knn}-like strategy \cite{davidov2010enhanced}. Evaluation using 5-fold cross validation using all the features obtained the highest F-score of 0.545 on Twitter and 0.827 in Amazon \cite{davidov2010semi}.

@@ -14,14 +14,13 @@ Emotion detection from text documents is closely related to \acrshort{sa}. As ex
   \label{fig:ekman_basic_emotions}
 \end{figure}
 
-Since then, more interpretations have been made regarding the representation of the emotions, Ekman himself added his list 11 new emotions stating that not all of them could be represented by facial expressions. In 1980 Robert Plutchik TODO
+Since then, more interpretations have been made regarding the representation of the emotions as shown in \cite{cambria2012hourglass}. Ekman himself added his list 11 new emotions stating that not all of them could be represented by facial expressions. In 1980 Robert Plutchik created another bi-dimensional model (see figure \ref{fig:plutchik-wheeel}), known as wheel of emotions, that defined eight basic bipolar emotions with different levels of intensification and could be combined among them. \acrfull{occ} designed in 1988 a model in which emotions were driven by an agent, based on the premise that ``emotions are not themselves linguistic things, but the most readily available non phenomenal access we have to them is through language'' \cite{binali2010computational}. The model included 22 emotion categories that aimed to ``model humans in general'' \cite{binali2010computational}. \acrshort{occ} enables the study of emotions as classes that share the same feeling, instead of specific words, proving that this ``is a theory of emotions and not a theory of the language of emotions'' \cite{binali2010computational}. For more information, authors of \cite{binali2012emotion} analyze the state of art of the emotion models and the techniques used to generate them.
 
-\iffalse
-In this section, we will briefly mention Ekman’s emotion model and the OCC (Ortony/Clore/Collins) model. Emotion models stipulate needed knowledge to appraise events. Ekman’s emotion model consists of “sadness, happiness, anger, fear, disgust and surprise” [4]. It has been used in systems that recognise facial expressions related to these emotional states. The OCC model presents emotions generally expressed by an agent. It includes 22 emotion categories [1] designed to model humans in general. It is based on the premise that emotions “are not themselves linguistic things, but the most readily available non phenomenal access we have to them is through language” [1].
+\begin{figure}[!htp]
+  \center
+  \includegraphics[width=0.6\textwidth]{figures/plutchik-wheel}
+  \caption{Plutchik's emotion wheel, image extracted from Wikipedia's public domain.}
+  \label{fig:plutchik-wheeel}
+\end{figure}
 
-The major benefit of using the OCC model is that it provides a specification for different kinds of emotions with a relatively culture free footing. This eliminates the need to study emotions based on specific words but as classes of underlying emotion types. In other words, it is a theory of emotions and not a theory of the language of emotions. The six emotion types in Ekman’s model appear in the OCC model because the specific keywords specified in the former model can be mapped onto specific emotion types specified using tokens (e.g. happiness, sadness, anger, disgust, surprise and fear) in the latter. The OCC emotion types are: Happy-for, Sorry-for, Resentment, Gloating, Hope, Fear, Fears-confirmed, Relief, Disappointment, Pride, Self-Reproach, Appreciation, Reproach, Gratitude, Anger, Gratification, Remorse, Liking, Disliking, Shame, Admiration, Pity[1].
-\fi
-
-\cite{binali2010computational}
-
-TODO
+Emotion classification tasks shares the same principles as \acrshort{sa}, and thus, the techniques used are mainly \acrshort{ml}, lexicon-based and hybrid approaches.
