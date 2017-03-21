@@ -8,12 +8,20 @@ The study of anger and its management has been studied since ancient times. Acco
 \subsection{Anger}
 \label{subsec:anger}
 
-TODO
+As explained in section \ref{sec:emotion_detection}, the increase of the usage of social media and computational viability to process all the publicly available data has enable the detection of emotions from text. However as there is not literature that focuses on anger emotion, this section will briefly enunciate the approaches researched to classify emotions that contain anger as target label.
+
+In 2007 during international workshop of evaluations of computational semantics analysis system, known as SemEval \cite{SemEvalPortal}, presented an task that analyzed the affective text, in which the participants had to calculate the the valence and emotional class of news titles. Three groups participated in the emotion classification subtask: SWAT, UA and UPAR7. 
+
+The system proposed by SWAT was based on unigram trained model supervised learning. In addition to the emotion label target given this group perform a synonym expansion of these keywords by using the Roget Thesaurus. The training of the system was performed by combining the development data provided by the SemEval task organizers plus a set of 1000 headlines that was annotated from the group.
+
+UPAR7 developed a linguistic rule-based system approach. The first step was to pre-process the data by un-capitalize the common words. Then, each word was rated separately with each emotion target label. 
+
+In order to determine the type of emotion in the headline UA group collected statistics from three web search engines to calculate the distribution of nouns, verbs, adjectives and adverbs of the headline. The emotion scores were obtained through \acrfull{pmi}.
+
+The F1-score obtained by SWAT, UA and UPAR7 for anger sentiment was 7.06, 16.03 and 3.02 respectively (results multiplied by 100) \cite{strapparava2007semeval}.
 
 \subsection{Irony and Sarcasm}
 \label{subsec:irony_sarcasm}
-
-
 
 Defend the idea of using irony and sarcasm as the same, since sarcasm is a subset of irony.
 ``In linguistics, verbal irony is sometimes used as a synonym of sarcasm \cite{giora2013negation}; \cite{giora2015defaultness} and \cite{giora2015default}. According to the literature, boundaries in meaning between irony, sarcasm et similia are fuzzy \cite{bosco2013developing}. While some authors consider irony as an umbrella term covering also sarcasm \cite{gibbs1991psychological}, \cite{wilson2006pragmatics} and \cite{kreuz1993empirical}, others provide insights for a separation \cite{filatova2012irony}.''
