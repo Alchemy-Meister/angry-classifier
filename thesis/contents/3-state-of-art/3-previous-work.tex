@@ -20,6 +20,14 @@ In order to determine the type of emotion in the headline UA group collected sta
 
 The F1-score obtained by SWAT, UA and UPAR7 for anger sentiment was 7.06, 16.03 and 3.02 respectively (results multiplied by 100) \cite{strapparava2007semeval}.
 
+Authors in \cite{strapparava2008learning} implemented five system for emotion analysis based on a knowledge based emotion annotation and corpus based emotion annotation: \acrshort{wn}-affect presence, \acrshort{lsa} single word, \acrshort{lsa} emotion synset, \acrshort{lsa} all emotion words and \acrshort{nb} trained on blogs. For anger annotation, the proposed system scored a F1 score of 16.77 (results multiplied by 100), outperforming the system proposed by UA in SemEval for anger annotation.
+
+Kirk Roberts et al. developed a system composed of six \acrshort{svm} classifiers, one for each Ekman's sentiment basic emotion. The Features selected as input for the binary classifier where: unigrams, bigrams, trigrams, presence of interrogation or exclamation mark, \acrlong{wn} synsets, \acrshort{wn} hypernyms, \acrlong{lda} topic scores and high \acrshort{pmi} unigrams (significant words). The anger classifier used unigrams, synsets, topis and significant words, scoring a F1 score of 0.642 \cite{roberts2012empatweet}.
+
+Chew-Yean Yam posted at Microsoft developer Blog an example of emotion classification using Deep Learning techniques. The corpus was collected by using Amazon's Mechanical Turk to perform a \acrfull{hit} to manually annotate the data, obtaining a total of 784,349 samples of informal short English messages classified as five classes, anger, sadness, fear, happiness and excitement. The Deep Learning architecture is described ad a \acrfull{nn} with five out nodes, three hidden layers, that contain 5, 25 and 125 nodes respectively. The loss function selected was Cross entropy with a stochastic gradient descent optimization algorithm. The learning rate was set to 0.001. The maximum training iteration was set to 100 with a greedy pre-trainer type executed though-out 25 epochs. The anger \cite{microsoftEmotionAPI}
+
+
+
 \subsection{Irony and Sarcasm}
 \label{subsec:irony_sarcasm}
 
