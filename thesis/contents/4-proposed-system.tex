@@ -1,28 +1,59 @@
-\chapter{Proposed System}
+\chapter{Proposed Solution}
 
 The aim of this chapter is to explain in detail the steps followed to conduct the experiment first introduced in section \ref{}.
 
-As stated on last sub-meeting, SemEval Workgroup's labeled dataset doesn't work for the scope of this research. They focus on classifying polarity of texts messages (positive, negative and neutral classes)
+As explained in section \ref{sec:previous_work}, the suppression of anger can derivate in the development on a more extremist and sarcastic personality. To recognize repressed anger from text messages, this research has based on the hypothesis that repressed anger messages contain both anger and ironic features and thus, focus on the detection of these features independently on Twitter documents.
 
-I analyzed the technique trends from SemEval, the international workshop for semantic evaluation. On 2016 for sentiment analysis task 4 they stated the following: 
+Many research have been done to detect theses to aspects, in general, we could say that the most explored approach used for emotion classification and irony detection are based on \acrshort{svm} learning algorithm. However, recently introduced technology has been gaining popularity among researchers: \acrshort{dl}. In fact, during the task four presented in the international workshop of evaluations of computational semantics, SemEval 2016, the organizers stated as follow:
 
-“A general trend that emerges from SemEval-2016 Task 4 is that most teams who were ranked at the top in the various subtasks used deep learning, including convolutional NNs, recurrent NNs, and (general purpose or task-specific) word embeddings.”
+``A general trend that emerges from SemEval-2016 Task 4 is that most teams who were ranked at the top in the various subtasks used \acrlong{dl}, including convolutional \acrshort{nn}, recurrent \acrshort{nn}, and (general purpose or task-specific) word embeddings. In many cases, the use of these techniques allowed the teams using them to obtain good scores even without tuning their system to the specifics of the subtask at hand [...]. Conversely, several teams that have indeed tunned their system to the specifics of the subtask at hand, but have not used \acrlong{dl} techniques, have performed less satisfactorily. This is a further confirmation of the power of \acrlong{dl} techniques for tweet sentiment analysis'' \cite{nakov2016semeval}.
 
-“In many cases, the use of these techniques allowed the teams using them to obtain good scores even without tuning their system to the specifics of the subtask at hand [...] Conversely, several teams that have indeed tunned their system to the specifics of the subtask at hand, but have not used deep learning techniques, have performed less satisfactorily. This is a further confirmation of the power of deep learning techniques for tweet sentiment analysis.”
+\acrshort{dl} has caused a great impact on SemEval and recent researches and therefore, based on these statements the decision to implement a system that make used of this technique was made.
 
-Based on these statements I decided to design my solution based on deep learning techniques.
+Since \acrshort{dl} is a class of \acrshort{ml}, the procedure developed in the proposed solution (see figure \ref{fig:solution_procedure}) follows the steps of a classical \acrlong{ml} approach (section \ref{subsubsec:techniques_machine_learning}): data collection, pre-processing, learning process, prediction and evaluation. In the following sections a general perspective of the proposed solution will introduced followed up by an explanation of the four steps in detail, while evaluation results will be presented of the following chapter.
+
+\begin{figure}[!htp]
+  \center
+  \includegraphics[width=0.93\textwidth]{figures/flow}
+  \caption{Proposed solution procedure.}
+  \label{fig:solution_procedure}
+\end{figure}
 
 \section{Data Collection}
 
-SMILE Twitter emotion dataset\cite{wang2016smile}
+The objective of subtask is to gather already annotated tweets that contains emotions, specially anger, and irony. During this step, multiple research paper that would provide public available dataset or would provide the methodology on how to build one were analyzed, such as the explained in \cite{hasan2014emotex} and \cite{sulis2016figurative}. In the following paragraphs describe the public datasets gathered and created for this project.
 
-"If you provide Content to third parties, including downloadable datasets of Content or an API that returns Content, you will only distribute or allow download of Tweet IDs and/or User IDs."\cite{twitterTOS}
+At first, only Wang et al.'s SMILE Twitter emotion dataset was found, containing a total of 3,085 tweets classified as: anger, disgust, happy, no-code, not-relevant, sad and surprise \cite{wang2016smile}. By simply taking into account the number of tweets offered in this dataset as small, and probably not enough, to perform \acrshort{dl} based classification. Figure \ref{fig:smile_dataset_distribution} show the distribution of tweets related to each annotated class. By analyzing the number of tweets related to anger the amount of tweets are reduced to 57. Moreover, the tweets labeled as not-relevant and no-code, classes that contains no value to the purpose of the research, represents around 58\% of the whole dataset. However, even if not being enough, the remaining 42\% would be stored to posteriorly merged to other datasets.
 
-EMOTEX\cite{hasan2014emotex} 
+\begin{figure}[!htp]
+  \center
+  \includegraphics[width=0.6\textwidth]{figures/SMILE_dataset_distribution}
+  \caption{Wang's SMILE Twitter emotion dataset distribution.}
+  \label{fig:smile_dataset_distribution}
+\end{figure}
 
 Twitter sentiment datasets are publicly available in CrowdFlower's ``Data for Everyone'' collection\cite{CrowdFlowerDfE}.
 
+\begin{figure}[!htp]
+  \center
+  \includegraphics[width=0.6\textwidth]{figures/crowd_flower_dataset_distribution}
+  \caption{CrowdFlower's Data for Everyone, Sentiment Analysis: Emotion in Text dataset distribution.}
+  \label{fig:crowdflower_dataset_distribution}
+\end{figure}
+
 Wang dataset\cite{wang2012harnessing}
+
+\begin{figure}[!htp]
+  \center
+  \includegraphics[width=0.6\textwidth]{figures/wang_2012_dataset_distribution}
+  \caption{Wang 2012's test and train\_2\_1 datasets merge distribution.}
+  \label{fig:wang_2012_dataset_distribution}
+\end{figure}
+
+To prevent \acrshort{dl} overfitting issue, use dropout layer, validation data, obtain more data, under-sample data.
+
+"If you provide Content to third parties, including downloadable datasets of Content or an API that returns Content, you will only distribute or allow download of Tweet IDs and/or User IDs."\cite{twitterTOS}
+
 
 Found SMILE dataset, containing 3085 Twitter messages.
 Classifies tweets into the following 7 classes: Anger, Disgust, Happy, Sad, Surprise, No-code and Not-relevant.
