@@ -3,12 +3,27 @@
 \usepackage{verbments}
 \usepackage{placeins}
 
-\listofpyglistingsname{Algorithm Index}
+\newcommand*{\gray}{gray}
+\newcommand{\mcrot}[4]{\multicolumn{#1}{#2}{\rlap{\rotatebox{#3}{#4}~}}}
+\newcommand*{\woB}[1]{\mcrot{1}{l}{30}{#1}}
+
+\newcommand*{\colorme}[1]{%
+    \pgfmathparse{#1<.5?1:0}%
+    \ifnum\pgfmathresult=0\relax\color{white}\fi
+    \pgfmathparse{1-#1}
+    \expandafter\cellcolor\expandafter[\expandafter\gray\expandafter]\expandafter{\pgfmathresult}%
+    #1%
+}
+
+\listofpyglistingsname{List of Algorithms}
 
 \hypersetup{
   pdfauthor={Jesús María Sesma Solance},
   pdftitle={Automatic Detection of Repressed Anger from Text Messages},
 }
+
+\newlength{\tabwidth}
+\settowidth{\tabwidth}{0.00}
 
 \bibliography{bibliography}
 \makeglossaries
@@ -31,7 +46,6 @@
 \cleardoublepage\tableofcontents
 \cleardoublepage\listoffigures
 \cleardoublepage\listoftables
-\cleardoublepage\listofpyglistings
 
 \mainmatter
 \pagestyle{phdthesis}

@@ -68,6 +68,7 @@ A classification model is useful for the following purposes \cite{pang2006introd
 It is important to remark that classification techniques perform their best when used for predicting or describing datasets which its class label is binary or nominal, Since they no consider properties such ordinality or the implicit order among the categories, they become ineffective with ordinal class labels \cite{frank2001simple}.
 
 \subsection{General classification problem solving}
+\label{general_classificartion_problem_solving}
 
 For general classification problems solving, popular techniques consists on a process that starts with building classification models from a sample dataset \cite{witten2005data}. Each technique depends on a learning algorithm witch is in charge of generating the classification model. A good model should define the relationship between the input attribute set and its belonging category that suits the best. Therefore the model should be valid for both, the sample data used to generate the model and also for new unknown instances. Among popular classification techniques \acrfull{svm}, \acrfullpl{nn}, Naive Bayes or \acrfullpl{dt} can be found \cite{garje2016sentiment}.
 
@@ -97,22 +98,27 @@ As shown in the Figure \ref{fig:classification_problem}, to solve a classificati
 \label{tab:confusion_matrix}
 \end{table}
 
-As a example, Table \ref{tab:confusion_matrix} represents the confusion matrix of a binary classification problem. 
+As a example, Table \ref{tab:confusion_matrix} represents the confusion matrix of a binary classification problem, in which the possible classes that can be assigned to a given instance are \textit{Yes} or \textit{No}. The values presented in this confusion matrix represents the counts of instances correctly and incorrectly classified as a means of model performance evaluation, being the diagonal of the table the instances classified correctly, the true positives (\acrshort{tp}) and negatives (\acrshort{tn}). The rest of the table corresponds to the number of instances that have been classified incorrectly, the false positives (\acrshort{fp}) and false negatives (\acrshort{fn}). The definition of a cell done by the value of the column and the row in which is positioned, read as the number instances of \textit{X} classified as \textit{Y}, where \textit{X} and \textit{Y} are the determined value of the row and column respectively. For instance, the cell $a$ is interpreted as the counts of Yes that have been classified as \textit{Yes}, the TP.
+
+Although the confusion matrix gives all the relevant information to determine how well the system has performed, sometimes is convenient to provide this information into a single value that summarizes the content of all the table. To do so, multiple performance metrics have been defined and one of those is the accuracy defined as:
+
+\[Accuracy=\frac{TP+TN}{TP+FP+FN+TN}\]
+
+Accuracy represents the percentage of correctly classified instances. However, using only accuracy may not be enough, as for example when the dataset is imbalanced or it has a majority of elements for a determined class. Of instance, on a naive classifier that always determined an instance as the element with the maximum number of appearances in the dataset, the accuracy of classifier results in a high value although, the model does not have predictive capacity. This is considered the accuracy paradox \cite{accuracyParadox} and thus, to avoid the scoring a misleading measurement, it is recommendable to combine its usage with other performance metrics such as precision and recall.
+
+Translating the precision from information retrieval context it would answer to the question \textit{how many classified items are relevant for the current query?} and thus, the precision is defined as:
+
+\[Precision=\frac{TP}{TP+FP}\]
+
+In the same context recall, in the other hand, answers to the question \textit{how many relevant items are classified properly?} and such, defined as:
+
+\[Recall=\frac{TP}{TP+FN}\]
+
+Finally, a combination of both measures, precision and recall, as a weighted average is called F-Measure or F1-Score. It allows to have a single performance metric to evaluate the classifier. Although, multiple definitions of the metric that give more relevance to the recall over the precision or vice versa exist, the general definition can be specified by the following equation:
+
+\[F_1=2 \times \frac{precision \times recall}{precision+recall}\]
+
 \iffalse
-There are two possible classes for an instance to be assigned, $Yes$ and $No$
-
-[STARTS COPY PASTE]
-
-Evaluation of the performance of a classification model is based on the counts of test records correctly and incorrectly predicted by the model. These counts are tabulated in a table known as a confusion matrix. Table 4.2 depicts the confusion matrix for a binary classification problem. Each entry fij in this table denotes the number of records from class i predicted to be of class j. For instance, f01 is the number of records from class 0 incorrectly predicted as class 1. Based on the entries in the confusion matrix, the total number of correct predictions made by the model is (f11 + f00) and the total number of incorrect predictions is (f10 + f01).
-Although a confusion matrix provides the information needed to determine how well a classification model performs, summarizing this information with a single number would make it more convenient to compare the performance of different models. This can be done using a performance metric such as accuracy, which is defined as follows:
-
-Accuracy = Number of correct predictions = f11 + f00 . (4.1) Total number of predictions f11 + f10 + f01 + f00
-
-Equivalently, the performance of a model can be expressed in terms of its error rate, which is given by the following equation:
-
-Error rate = Number of wrong predictions = f10 + f01 . (4.2) Total number of predictions f11 + f10 + f01 + f00
-
-Most classification algorithms seek models that attain the highest accuracy, or equivalently, the lowest error rate when applied to the test set. We will revisit the topic of model evaluation in subsection 4.5.
 
 \subsection{Support Vector Machine}
 
@@ -171,12 +177,12 @@ asdasdasd \cite{berwick2003idiot}
 
 \subsection{Neural Networks}
 
-\fi
-
 \subsection{Ensemble Learning}
 \label{subsec:ensemble_learning]}
 
 \cite{ensemble2009Polikar}
+
+\fi
 
 \subsection{Deep Learning}
 \label{subsec:deep_learning}
@@ -209,7 +215,3 @@ Could score better results in the benchmarking.
 → To gather large amount of data for each class is compulsory solve the overfitting problem. (Detection and prevention by using Cross-validation)
 → If the dataset is not completely labeled weakly (distant) supervised learning could be applied.
 → Theano and Keras have proved a DL frameworks to perform well.
-
-Kim \acrfull{cnn} sentence classification \cite{kim2014convolutional}
-
-TODO
