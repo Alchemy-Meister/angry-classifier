@@ -25,7 +25,7 @@ Because the model designed depends on the word sequence matrices to generate the
 
 As explained before, this is the baseline the project bases on to compare the improvement achieved against the proposed solution. It consist of a dummy classifier that assign to each given tweet the \textit{normal} target label.
 
-The results provided make used of the confusion matrix and performance metrics first introduce in the section \ref{general_classificartion_problem_solving}.
+The results provided make used of the confusion matrix and performance metrics first introduce in the section \ref{general_classificartion_problem_solving}, with all the values rounded to two decimal places.
 
 \begin{table}[!htp]
 \centering
@@ -40,9 +40,29 @@ The results provided make used of the confusion matrix and performance metrics f
   \label{tab:naive_classifier_confusion_matrix}
 \end{table}
 
+\begin{table}[!htp]
+\centering
+\begin{tabular}{ l|c|c|c|c }
+\hline
+Class & Average & Precision & Recall & F1-Score  \\ \hline
+Irony           & 0.0  & 0.0  & 0.0 & 0.0 \\
+Normal          & 1.0  & 0.66 & 1.0 & 0.8 \\
+Repressed Anger & 0.0  & 0.0 & 0.0 & 0.0 \\
+Explicit anger  & 0.0  & 0.0  & 0.0 & 0.0 \\ \hline
+Overall         & 0.66 & 0.16 & 0.25 & 0.2 \\
+\hline
+\end{tabular}
+\caption{Naive classifier: Performance}
+\label{tab:naive_performance}
+\end{table}
+
+\FloatBarrier
+
 \subsection{Google News word2vec pre-trained model}
 
-This is original proposed solution, first introduced in chapter \ref{proposed_solution}. It uses the publicly available Google News pre-trained model \cite{googleWord2Vec} to generate the word sequence matrices in the pre-processing phase.
+This is original proposed solution, first introduced in chapter \ref{proposed_solution}. It uses the publicly available Google News pre-trained model \cite{googleWord2Vec} to generate the word sequence matrices in the pre-processing phase. As with the rest of procedure variations, the performance metrics are divided into two subsection: (i) on the one hand, the evaluation of how the binary classifiers managed to determine independently if a tweet contains anger or irony; (ii) on the other hand, the evaluation of the repressed anger predictor that depends on how well the previous binary classifiers perform to merge their output.
+
+\subsubsection{Binary classifiers}
 
 \begin{table}[!htp]
 \centering
@@ -53,6 +73,20 @@ This is original proposed solution, first introduced in chapter \ref{proposed_so
   \end{tabular}
   \caption{Binary anger classifier (Google News): normalized confusion matrix}
   \label{tab:anger_google_confusion_matrix}
+\end{table}
+
+\begin{table}[!htp]
+\centering
+\begin{tabular}{ l|c|c|c|c }
+\hline
+Class & Average & Precision & Recall & F1-Score  \\ \hline
+anger     & 0.77 & 0.79 & 0.77 & 0.78 \\
+no\_anger & 0.8  & 0.78 & 0.8  & 0.79 \\ \hline
+Overall   & 0.78 & 0.78 & 0.78 & 0.78 \\
+\hline
+\end{tabular}
+\caption{Binary anger classifier (Google News): Performance}
+\label{tab:binary_anger_google_news_performance}
 \end{table}
 
 \begin{table}[!htp]
@@ -68,6 +102,24 @@ This is original proposed solution, first introduced in chapter \ref{proposed_so
 
 \begin{table}[!htp]
 \centering
+\begin{tabular}{ l|c|c|c|c }
+\hline
+Class & Average & Precision & Recall & F1-Score  \\ \hline
+irony     & 0.83 & 0.86 & 0.83 & 0.84 \\
+no\_irony & 0.86 & 0.83 & 0.86 & 0.84 \\ \hline
+Overall   & 0.85 & 0.85 & 0.85 & 0.85 \\
+\hline
+\end{tabular}
+\caption{Binary irony classifier (Google News): Performance}
+\label{tab:binary_irony_google_news_performance}
+\end{table}
+
+\FloatBarrier
+
+\subsubsection{Repressed anger predictor}
+
+\begin{table}[!htp]
+\centering
   \begin{tabular}{l*4{|>{\centering\arraybackslash}m{\tabwidth}}|}
     \woB{} & \woB{irony}　& \woB{normal}　& \woB{repressed anger}　& \woB{explicit anger}    \\ \hhline{~*4{|-}|}
     irony           & \colorme{0.47}  & \colorme{0.3}   & \colorme{0.13}  & \colorme{0.11}  \\ \hhline{~*4{|-}|}
@@ -79,9 +131,27 @@ This is original proposed solution, first introduced in chapter \ref{proposed_so
   \label{tab:google_news_confusion_matrix}
 \end{table}
 
+\begin{table}[!htp]
+\centering
+\begin{tabular}{ l|c|c|c|c }
+\hline
+Class & Average & Precision & Recall & F1-Score  \\ \hline
+Irony           & 0.47 & 0.17 & 0.47 & 0.24 \\
+Normal          & 0.56 & 0.82 & 0.56 & 0.67 \\
+Repressed Anger & 0.43 & 0.15 & 0.43 & 0.22 \\
+Explicit anger  & 0.42 & 0.4  & 0.42 & 0.41 \\ \hline
+Overall         & 0.51 & 0.38 & 0.47 & 0.39 \\
+\hline
+\end{tabular}
+\caption{Google News: Performance}
+\label{tab:google_news_performance}
+\end{table}
+
 \subsection{Fréderic Goding word2vec pre-trained model}
 
-This experiments consist on the same idea as original solution. However, to generate the word sequence matrices, instead of using the Google-News-Vector(300) pre-trained model, which has been created by using the words from the Google News articles, the Fréderic Goding 400 feature pre-trained model \cite{godin2015multimedia} that was generated directly from tweets was used. As tweets are composed by words and a written style that differs from news, using a pre-trained model developed from the content generated from Twitter users could increase the chances of tweet's word appearance in the pre-trained model dictionary and thus be able to convert the word into a vector space instead of initialize the unknown words with Zero padding vectors. 
+This experiments consist on the same idea as original solution. However, to generate the word sequence matrices, instead of using the Google-News-Vector(300) pre-trained model, which has been created by using the words from the Google News articles, the Fréderic Goding 400 feature pre-trained model \cite{godin2015multimedia} that was generated directly from tweets was used. As tweets are composed by words and a written style that differs from news, using a pre-trained model developed from the content generated from Twitter users could increase the chances of tweet's word appearance in the pre-trained model dictionary and thus, be able to convert more words into a vector space, instead of initialize the unknown words with Zero padding vectors. 
+
+\subsubsection{Binary classifiers}
 
 \begin{table}[!htp]
 \centering
@@ -92,6 +162,20 @@ This experiments consist on the same idea as original solution. However, to gene
   \end{tabular}
   \caption{Binary anger classifier (Fréderic Goding): normalized confusion matrix}
   \label{tab:anger_frederic_confusion_matrix}
+\end{table}
+
+\begin{table}[!htp]
+\centering
+\begin{tabular}{ l|c|c|c|c }
+\hline
+Class & Average & Precision & Recall & F1-Score  \\ \hline
+anger     & 0.83 & 0.77 & 0.82 & 0.79 \\
+no\_anger & 0.76 & 0.82 & 0.76 & 0.79 \\ \hline
+Overall   & 0.8  & 0.8  & 0.8  & 0.8  \\
+\hline
+\end{tabular}
+\caption{Binary anger classifier (Fréderic Goding): Performance}
+\label{tab:binary_anger_frederic_performance}
 \end{table}
 
 \begin{table}[!htp]
@@ -107,6 +191,22 @@ This experiments consist on the same idea as original solution. However, to gene
 
 \begin{table}[!htp]
 \centering
+\begin{tabular}{ l|c|c|c|c }
+\hline
+Class & Average & Precision & Recall & F1-Score  \\ \hline
+irony     & 0.86 & 0.87 & 0.86 & 0.86 \\
+no\_irony & 0.86 & 0.86 & 0.86 & 0.86 \\ \hline
+Overall   & 0.86 & 0.86 & 0.86 & 0.86 \\
+\hline
+\end{tabular}
+\caption{Binary irony classifier (Fréderic Goding): Performance}
+\label{tab:binary_irony_frederic_performance}
+\end{table}
+
+\subsubsection{Repressed anger predictor}
+
+\begin{table}[!htp]
+\centering
   \begin{tabular}{l*4{|>{\centering\arraybackslash}m{\tabwidth}}|}
     \woB{} & \woB{irony}　& \woB{normal}　& \woB{repressed anger}　& \woB{explicit anger}    \\ \hhline{~*4{|-}|}
     irony           & \colorme{0.45}  & \colorme{0.3}   & \colorme{0.21}  & \colorme{0.04}  \\ \hhline{~*4{|-}|}
@@ -118,9 +218,45 @@ This experiments consist on the same idea as original solution. However, to gene
   \label{tab:frederic_goding_confusion_matrix}
 \end{table}
 
+\begin{table}[!htp]
+\centering
+\begin{tabular}{ l|c|c|c|c }
+\hline
+Class & Average & Precision & Recall & F1-Score  \\ \hline
+Irony           & 0.45 & 0.16 & 0.45 & 0.24 \\
+Normal          & 0.65 & 0.82 & 0.65 & 0.73 \\
+Repressed Anger & 0.25 & 0.11 & 0.25 & 0.15 \\
+Explicit anger  & 0.41 & 0.47 & 0.41 & 0.44 \\ \hline
+Overall         & 0.56 & 0.39 & 0.44 & 0.39 \\
+\hline
+\end{tabular}
+\caption{Fréderic Goding: Performance}
+\label{tab:frederec_performance}
+\end{table}
+
+\FloatBarrier
+
 \subsection{Google News word2vec pre-trained model plus spell checker}
 
-This variation consist on adding a spell checker to those words that the Google-New-Vector(300) does not know. The usage of a spell checker would increase the chances of recognizing more words in the pre-trained model's dictionary and thus, initialize its space vector with Word2vec algorithm.
+This variation consist on adding a spell checker to those words that the Google-New-Vector(300) does not know. The usage of a spell checker would increase the chances of recognizing more words in the pre-trained model's dictionary and thus, initialize its space vector with Word2vec algorithm, helping to obtain new features that would enable the model to achieve better results. As explained in section \ref{sec:solution_prepocessing} of the proposed solution, the spell checker used is based on Peter Norvig's solution. In his blog, he published the code and a language model, big.txt, used to select possible word candidates that correct the grammatical mistakes of the given word. Table \ref{tab:language_model_evaluation} compares the performance obtained by both, big.txt and the self-made language model by executing the evaluation tasks that Norvig designed that checks if the proposed correct word is the expected.
+
+\begin{table}[!htp]
+\centering
+\begin{tabular}{ l*4{>{\centering\arraybackslash}m{\tabwidth}} }
+Model & \woB{No. of words to correct} & \woB{Average of correct words} & \woB{Average of unknown words} & \woB{Words processed per second}  \\ \hline
+big.txt language model  & \cuscol{270} & 51\%          & \cuscol{35\%}          & 37 \\
+proposed language model & \cuscol{270} & \textbf{75\%} & \cuscol{\textbf{5\%}}  & \textbf{64} \\ \hline
+big.txt language model  & \cuscol{400} & 53\%          & \cuscol{32\%}          & 35 \\
+proposed language model & \cuscol{400} & \textbf{69\%} & \cuscol{\textbf{7\%}}  & \textbf{63} \\
+\hline
+\end{tabular}
+\caption{Language model evaluation results}
+\label{tab:language_model_evaluation}
+\end{table}
+
+\clearpage
+
+\subsubsection{Binary classifiers}
 
 \begin{table}[!htp]
 \centering
@@ -131,6 +267,20 @@ This variation consist on adding a spell checker to those words that the Google-
   \end{tabular}
   \caption{Binary anger classifier (Google News + spell checker): normalized confusion matrix}
   \label{tab:anger_spell_confusion_matrix}
+\end{table}
+
+\begin{table}[!htp]
+\centering
+\begin{tabular}{ l|c|c|c|c }
+\hline
+Class & Average & Precision & Recall & F1-Score  \\ \hline
+anger     & 0.76 & 0.79 & 0.75 & 0.79 \\
+no\_anger & 0.81 & 0.77 & 0.81 & 0.79 \\ \hline
+Overall   & 0.78 & 0.78 & 0.78 & 0.78 \\
+\hline
+\end{tabular}
+\caption{Binary anger classifier (Google News + spell checker): Performance}
+\label{tab:binary_anger_spell_performance}
 \end{table}
 
 \begin{table}[!htp]
@@ -146,6 +296,24 @@ This variation consist on adding a spell checker to those words that the Google-
 
 \begin{table}[!htp]
 \centering
+\begin{tabular}{ l|c|c|c|c }
+\hline
+Class & Average & Precision & Recall & F1-Score  \\ \hline
+irony     & 0.83 & 0.87 & 0.82 & 0.84 \\
+no\_irony & 0.88 & 0.83 & 0.88 & 0.85 \\ \hline
+Overall   & 0.85 & 0.85 & 0.85 & 0.85 \\
+\hline
+\end{tabular}
+\caption{Binary irony classifier (Google News + spell checker): Performance}
+\label{tab:binary_irony_spell_performance}
+\end{table}
+
+\FloatBarrier
+
+\subsubsection{Repressed anger predictor}
+
+\begin{table}[!htp]
+\centering
   \begin{tabular}{l*4{|>{\centering\arraybackslash}m{\tabwidth}}|}
     \woB{} & \woB{irony}　& \woB{normal}　& \woB{repressed anger}　& \woB{explicit anger}    \\ \hhline{~*4{|-}|}
     irony           & \colorme{0.47}  & \colorme{0.3}   & \colorme{0.13}  & \colorme{0.11}  \\ \hhline{~*4{|-}|}
@@ -155,6 +323,58 @@ This variation consist on adding a spell checker to those words that the Google-
   \end{tabular}
   \caption{Google News + spell checker: normalized confusion matrix}
   \label{tab:spell_confusion_matrix}
+\end{table}
+
+\begin{table}[!htp]
+\centering
+\begin{tabular}{ l|c|c|c|c }
+\hline
+Class & Average & Precision & Recall & F1-Score  \\ \hline
+Irony           & 0.47 & 0.16 & 0.47 & 0.24 \\
+Normal          & 0.59 & 0.82 & 0.59 & 0.69 \\
+Repressed Anger & 0.43 & 0.16 & 0.43 & 0.23 \\
+Explicit anger  & 0.4  & 0.43 & 0.4 & 0.42 \\ \hline
+Overall         & 0.53 & 0.39 & 0.47 & 0.39 \\
+\hline
+\end{tabular}
+\caption{Google News + spell checker: Performance}
+\label{tab:spell_performance}
+\end{table}
+
+\FloatBarrier
+
+\section{Result summary}
+
+This section aims to summarize the relevant information from all the scores presented throughout the chapter. Table \ref{tab:represed_anger_performance} illustrates how each model has performed on detecting repressed anger target label, while table \ref{tab:overall_performance} compares the overall performance of each model.
+
+\begin{table}[!htp]
+\centering
+\begin{tabular}{ l|c|c|c|c }
+\hline
+Model & Average & Precision & Recall & F1-Score  \\ \hline
+Naive classifier    & 0.0           & 0.0           & 0.0  & 0.0 \\
+Google News         & \textbf{0.43} & 0.15          & \textbf{0.43} & 0.22 \\
+Fréderic Goding     & 0.25          & 0.11          & 0.25          & 0.15 \\
+Google News + spell & \textbf{0.43} & \textbf{0.16} & \textbf{0.43} & \textbf{0.23} \\
+\hline
+\end{tabular}
+\caption{Repressed anger performance comparison}
+\label{tab:represed_anger_performance}
+\end{table}
+
+\begin{table}[!htp]
+\centering
+\begin{tabular}{ l|c|c|c|c }
+\hline
+Model & Average & Precision & Recall & F1-Score  \\ \hline
+Naive classifier    & \textbf{0.66} & 0.16          & 0.25 & 0.2 \\
+Google News         & 0.51          & 0.38          & \textbf{0.47} & \textbf{0.39} \\
+Fréderic Goding     & 0.56          & \textbf{0.39} & 0.44          & \textbf{0.39} \\
+Google News + spell & 0.53          & \textbf{0.39} & \textbf{0.47} & \textbf{0.39} \\
+\hline
+\end{tabular}
+\caption{Overall model performance comparison}
+\label{tab:overall_performance}
 \end{table}
 
 \iffalse

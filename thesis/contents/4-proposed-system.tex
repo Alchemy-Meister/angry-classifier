@@ -64,6 +64,7 @@ In 2012 Wang et al. created a publicly available dataset from Twitter messages t
 To collect tweets related to irony, as no publicly available dataset was found on a reasonable time, it was decided to harvest automatically annotated tweets directly. To do so, Twitter archiver \cite{twitterArchiver}, an extension of Google Sheets, was used. It enables to automatically download tweets based on features such as keywords, hashtags, language, among others. By using this tool a total of 36,274 English tweets that contained hashtags such as \#irony, \#ironic, \#sarcasm or \#sarcastic where downloaded from December 12th 2016 to January 25th 2017.
 
 \section{Pre-processing}
+\label{sec:solution_prepocessing}
 
 After having collected enough data to prevent \acrshort{dl} overfitting issue, the next step is to pre-process the datasets, to eliminate non English tweets, possible duplicates, hashtags, user references, \acrshortpl{url}, correct spell mistakes, filter undesired classes, among others.
 

@@ -3,9 +3,11 @@
 \usepackage{verbments}
 \usepackage{placeins}
 
+\newcommand{\cuscol}[1]{\multicolumn{1}{|c|}{#1}}
 \newcommand*{\gray}{gray}
 \newcommand{\mcrot}[4]{\multicolumn{#1}{#2}{\rlap{\rotatebox{#3}{#4}~}}}
 \newcommand*{\woB}[1]{\mcrot{1}{l}{30}{#1}}
+
 
 \newcommand*{\colorme}[1]{%
     \pgfmathparse{#1<.5?1:0}%
@@ -65,17 +67,6 @@
 \endgroup
 
 \printglossary[type=\acronymtype]
-
-\appendix
-
-%\input{contents/extra/Acknowledgements}
-
-\backmatter
-
-\end{document}
-
-
-\makeglossaries
 
 \appendix
 
