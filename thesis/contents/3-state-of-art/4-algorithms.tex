@@ -11,7 +11,7 @@ According to \cite{voznika2007data}, classification can be defined as the task o
 
 \begin{figure}[!htp]
   \center
-  \includegraphics[width=0.7\textwidth]{figures/animal_classification}
+  \includegraphics[width=0.85\textwidth]{figures/animal_classification}
   \caption{Classification of animals. The image is extracted from Exploring Nature.}
   \label{fig:animal_classification}
 \end{figure}
@@ -74,7 +74,7 @@ For general classification problems solving, popular techniques consists on a pr
 
 \begin{figure}[!htp]
   \center
-  \includegraphics[width=0.7\textwidth]{figures/classification_problem_solving}
+  \includegraphics[width=0.85\textwidth]{figures/classification_problem_solving}
   \caption{General approach for classification model building and new instance category prediction.}
   \label{fig:classification_problem}
 \end{figure}
@@ -184,36 +184,76 @@ asdasdasd \cite{berwick2003idiot}
 
 \fi
 
-\subsection{Deep Learning}
+\subsection{Deep Learning: Convolutional Neural Network}
 \label{subsec:deep_learning}
 
-TODO \cite{cnnDennyBritz}
+In this section we will explain the fundamental of the algorithm on which the our solution is basen on, \acrlong{cnn}, a technology that was designed thinking mainly on computer vision tasks, but has proven to also for well on \acrshort{nlp} \cite{zhang2015sensitivity}, \cite{kim2014convolutional}. To understand how \acrshort{cnn} work, first we need to understand what a convolution is.
 
-Introduction to Sentiment Analysis.
-Relevant International Workshop found: SemEval
-→ Datasets repositories: Twitter as corpus, Amazon products reviews…
-→ Dataset labeling: CrowdFlower, Amazon Mechanical Turk.
-→ Word embedding: Word2vec, GloVe.
-→ Text classification features: N-grams based on Sentiment lexicon…
-→ Learning Methods: Supervised, Unsupervised, Distant…
-→ Deep Learning techniques: Convolutional NN, Recurrent NN, Deep Autoencoders…
-→ Classifiers: “Bag of Words”, Naive Bayes, Logistic Regression, SVM, NN, Clustering…
-→ Accuracy evaluation: Precision, Recall, F1-Score, Cross-validation…
-→ Trends: Best scoring teams used Deep Learning techniques.
+\section{Convolution}
 
-Next week work: Deep reading and prepare a Playground with small sample data.
+A convolution could be defined as an integral that denotes the amount of overlap that the function $g$ shifts over another function $f$ (see figure \ref{fig:representation_convolution}).
 
-Read fundamental theory about classifiers such as SVN, Bayesian, KNN, Decision Tree.
-Urge test what has been learned in order to set the basic knowledge.
-→ Download and test WEKA’s basic functionalities for educational and research purpose. (Includes a No-Code-GUI, which makes it user friendly for initial testings)
-→ Use scikit-learn for following iterations of the classifier (More modern algorithms, better memory management, Python development environment...)
-Further reading about Emotion classification techniques and investigate about repressed anger in English texts. 
-Multiclass angry classification?
+Mathematically, a convolution is the product of two functions $f$ and $g$, depending on the values of the overlap are finite or not, the convolution (single dimension) could be defined as \cite{convolution}: 
 
-Future work: Deep Learning
+\begin{figure}[!htp]
+  \center
+  \[[f \ast g](t)=\int_{0}^{t} f(\tau)g(t-\tau)d\tau\]
+  \caption{Convolution for a finite range of $t \in [0, \infty]$}
+  \label{fig:convolution_finite_range}
+\end{figure}
 
-Depending on the generated dataset (size and labeled/unlabeled) the project could opt for a DL based classifier.
-Could score better results in the benchmarking.
-→ To gather large amount of data for each class is compulsory solve the overfitting problem. (Detection and prevention by using Cross-validation)
-→ If the dataset is not completely labeled weakly (distant) supervised learning could be applied.
-→ Theano and Keras have proved a DL frameworks to perform well.
+or as:
+
+\begin{figure}[!htp]
+  \center
+  \[f \ast g \equiv \int_{-\infty}^{\infty} f(\tau)g(t-\tau)d\tau\]\[=\int_{-\infty}^{\infty} g(\tau)f(t-\tau)d\tau\]
+  \caption{Convolution for a infinite range of $t \in (-\infty, \infty)$}
+  \label{fig:convolution_infinite_range}
+\end{figure}
+
+\begin{figure}[!htp]
+  \center
+  \includegraphics[width=0.6\textwidth]{figures/comparison_convolution_correlation}
+  \caption{Graphical representation of a convolution and its comparison with correlation, image extracted from Wikipedia commons.}
+  \label{fig:representation_convolution}
+\end{figure}
+
+A multidimensional convolution of infinite range the definition becomes \cite{multidimensionalConvolution}: 
+
+\begin{figure}[!htp]
+  \center
+  \[f(t_1,t_2) \ast g(t_1,t_2) = \int_{t_1=-\infty}^{\infty}\int_{t_2=-\infty}^{\infty} f(\tau _1,\tau _2)g(t_1-\tau _1,t_2-\tau _2)d\tau _1 d\tau _2\]
+  \caption{Multidimensional convolution for infinite ranges of $t_1,t_2 \in (-\infty, \infty)$}
+  \label{fig:multidimension_convolution_infinite_range}
+\end{figure}
+
+In computer vision, images are transformed into two-dimensional functions, that can be represented as a matrix in which each value usually takes 0 or 1 values for black and white images or from 0 to 255 to gray-scale images. Most of the image transformation are based sliding window or function called ``kernel'', ``filter'' or ``feature detector'' \cite{cnnDennyBritz}, represented in figure \ref{fig:convolution_filter}.
+
+\begin{figure}[!htp]
+  \center
+  \includegraphics[width=0.6\textwidth]{figures/convolution_filter}
+  \caption{Representation of a 2D image convolution transformation of filter size 3x3.}
+  \label{fig:convolution_filter}
+\end{figure}
+
+\section{Convolutional Neural Networks}
+
+\acrlong{cnn} are usually feed-forward type neural networks that concatenate multiple layers of convolutions with non linear activation functions as shown in figure \ref{fig:cnn_architecture}. The learning process of, for example, an image classification, learns the values by detecting the edges of the raw pixel values in the input of the \acrshort{cnn}. Over the following layers with the extraction of high level features, until reaching to last layer in which, all the fully connected layer classifies the objects by using the previously extracted features. 
+
+\begin{figure}[!htp]
+  \center
+  \includegraphics[width=0.96\textwidth]{figures/cnn_architecture}
+  \caption{Example of a Convolutional Neural Network architecture \cite{kooi2017classifying}.}
+  \label{fig:cnn_architecture}
+\end{figure}
+
+To apply the following architecture to \acrshort{nlp} related tasks, instead of a two convolution array that represents the image, each row of the matrix represents a token, usually being this tokens numerical representations of words or characters initialized with space vectors that are initialized with word2vec or GloVe algorithms. Then as with images each convolution layer extract features that are used on the last layer to categorize the given document as shown in figure \ref{fig:cnn_npl}. 
+
+There are multiple types of architectures that combine multiple pooling layers that reduce computation cost by sub-sampling the matrix on each filter. In addition, as done in image processing, multiple channels of \acrshort{cnn} could be used to process each color, this idea can also translate into \acrshort{nlp} tasks by processing different word embeddings in each layer or applying different filters per channel \cite{singhalborrow}.
+
+\begin{figure}[htbp]
+  \center
+  \includegraphics[width=0.7\textwidth]{figures/cnn_npl}
+  \caption{Example of a Convolutional Neural Network architecture applied to NLP \cite{kim2014convolutional}.}
+  \label{fig:cnn_npl}
+\end{figure}
