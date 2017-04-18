@@ -120,7 +120,7 @@ def generate_model(model_size, max_phrase_length, num_categories):
 
     merged.add(Dense(num_categories))
     merged.add(Activation('softmax'))
-    merged.compile(loss='categorical_crossentropy', optimizer='adam', \
+    merged.compile(loss='binary_crossentropy', optimizer='adam', \
         metrics=['accuracy', 'mse', 'mae'])
 
     return merged
@@ -139,7 +139,7 @@ def load_model(model_path, weights_path):
 
     model = model_from_json(model_str)
     model.load_weights(weights_path)
-    model.compile(loss='categorical_crossentropy', optimizer='adam', \
+    model.compile(loss='binary_crossentropy', optimizer='adam', \
         metrics=['accuracy', 'mse', 'mae'])
 
     return model
