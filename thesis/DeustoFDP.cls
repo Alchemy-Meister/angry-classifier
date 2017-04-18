@@ -98,3 +98,10 @@
 
 \RequirePackage{multirow}
 \RequirePackage{hhline}
+
+\RequirePackage{amsmath}
+\RequirePackage{amssymb}
+
+\RequirePackage[table]{xcolor}
+\RequirePackage{collcell}
+\RequirePackage{pgf}

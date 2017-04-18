@@ -3,24 +3,46 @@
 \section{Previous Work}
 \label{sec:previous_work}
 
-TODO
-
-\subsection{Repressed Anger}
-\label{subsec:repressed_anger}
-
-TODO
+The study of anger and its management has been studied since ancient times. According to \acrfull{apa}, anger is \textit{``an emotion characterized by antagonism toward someone or something you feel has deliberately done you wrong''} \cite{angerAPA}. Anger is a normal emotion all human experience. Modern psychologists have studied the health effects that may derivate from anger suppression, such as shown in \cite{kemp1995anger} and \cite{staicu2010anger}, linking it to a more extremist and sarcastic personality. This research aims to find the answer to the question: \textit{``Can the repressed anger be detected in text?''}. Based on the definition of personality of a subject that has experienced repressed anger, the problem formulation has been simplified into finding negative messages influenced by anger that covered by a layer of sarcasm. The following subsections present a brief summary of the research conducted in the detection of anger and sarcasm.
 
 \subsection{Anger}
 \label{subsec:anger}
 
-TODO
+As explained in section \ref{sec:emotion_detection}, the increase of the usage of social media and computational viability to process all the publicly available data has enable the detection of emotions from text. However as there is not literature that focuses on anger emotion, this section will briefly enunciate the approaches researched to classify emotions that contain anger as target label.
 
-\subsection{Irony}
-\label{subsec:irony}
+In 2007 during international workshop of evaluations of computational semantics analysis system, known as SemEval \cite{SemEvalPortal}, presented an task that analyzed the affective text, in which the participants had to calculate the the valence and emotional class of news titles. Three groups participated in the emotion classification subtask: SWAT, UA and UPAR7. 
 
-TODO
+The system proposed by SWAT was based on unigram trained model supervised learning. In addition to the emotion label target given this group perform a synonym expansion of these keywords by using the Roget Thesaurus. The training of the system was performed by combining the development data provided by the SemEval task organizers plus a set of 1000 headlines that was annotated from the group.
 
-\cite{sulis2016figurative}
-\cite{carvalho2009clues}
+UPAR7 developed a linguistic rule-based system approach. The first step was to pre-process the data by un-capitalize the common words. Then, each word was rated separately with each emotion target label. 
 
-``Another issue concerns boundaries among irony and other figurative devices, such as sarcasm, satire or humor. According to literature, boundaries in meaning between different types of irony are fuzzy [Gibbs and Colston, 2007], and this makes more suitable annotations where different types of irony are not distinguished, as the one adopted in Senti–TUT''\cite{bosco2013developing}.
+In order to determine the type of emotion in the headline UA group collected statistics from three web search engines to calculate the distribution of nouns, verbs, adjectives and adverbs of the headline. The emotion scores were obtained through \acrfull{pmi}.
+
+The F1-score obtained by SWAT, UA and UPAR7 for anger sentiment was 7.06, 16.03 and 3.02 respectively (results multiplied by 100) \cite{strapparava2007semeval}.
+
+Authors in \cite{strapparava2008learning} implemented five system for emotion analysis based on a knowledge based emotion annotation and corpus based emotion annotation: \acrshort{wn}-affect presence, \acrshort{lsa} single word, \acrshort{lsa} emotion synset, \acrshort{lsa} all emotion words and \acrshort{nb} trained on blogs. For anger annotation, the proposed system scored a F1-score of 16.77 (results multiplied by 100), outperforming the system proposed by UA in SemEval for anger annotation.
+
+Kirk Roberts et al. developed a system composed of six \acrshort{svm} classifiers, one for each Ekman's sentiment basic emotion. The Features selected as input for the binary classifier where: unigrams, bigrams, trigrams, presence of interrogation or exclamation mark, \acrlong{wn} synsets, \acrshort{wn} hypernyms, \acrlong{lda} topic scores and high \acrshort{pmi} unigrams (significant words). The anger classifier used unigrams, synsets, topis and significant words, scoring a F1-score of 0.642 \cite{roberts2012empatweet}.
+
+Chew-Yean Yam posted at Microsoft developer Blog an example of emotion classification using \acrfull{dl} techniques. The corpus was collected by using Amazon's Mechanical Turk to perform a \acrfull{hit} to manually annotate the data, obtaining a total of 784,349 samples of informal short English messages classified as five classes, anger, sadness, fear, happiness and excitement. The \acrshort{dl} architecture is described ad a \acrfull{nn} with five out nodes, three hidden layers, that contain 5, 25 and 125 nodes respectively. The loss function selected was Cross entropy with a stochastic gradient descent optimization algorithm. The learning rate was set to 0.001. The maximum training iteration was set to 100 with a greedy pre-trainer type executed though-out 25 epochs. The anger classifier in this system obtained a F1-score of 0.64958 \cite{microsoftEmotionAPI}.
+
+\subsection{Irony and Sarcasm}
+\label{subsec:irony_sarcasm}
+
+Sarcasm, also referred as verbal irony \cite{giora2013negation}; \cite{giora2015defaultness} and \cite{giora2015default}, is defined as cutting remark to express contempt or ridicule according the free dictionary \cite{sarcasmFreeDictionary}. Based on the literature, the boundaries of irony and sarcasm are fuzzy \cite{bosco2013developing}, as some authors consider irony as global term that includes sarcasm \cite{gibbs1991psychological}, \cite{wilson2006pragmatics} and \cite{kreuz1993empirical} and others analyze the differences between both \cite{filatova2012irony}.
+
+Authors in \cite{joshi2016automatic} conduct a survey of the approaches used to detect sarcasm. Mainly three approaches have been proposed: rule-based, statistical approaches and \acrlong{dl} approaches.
+
+In 2009 Paula Carvalho et al. analyzed the detection of Portuguese irony by using pattern matching rules, such as diminutive forms, interjections, verb morphology, heavy punctuation, quotation marks, laughter expressions, among others. The proposed system classified the given sentences as ironic, not ironic, undecided and ambiguous. They concluded that the best patters for irony recognition are quote and laugh patterns, obtaining an accuracy of 68.29\% and 85.40\% respectively \cite{carvalho2009clues}.
+
+\cite{maynard2014cares} developed in 2014 a rule based system to classify sentences in which the presence of sarcasm was known by analyzing hashtags in Twitter. Based on the premise that if the hashtag does not agree with the rest of the tweet the sentence is classified as sarcastic and by re-tokenizing hashtashs to split concatenated tokens, the classifier obtained a F1-score of 91.03 (result multiplied by 100).
+
+Two important aspects must be pointed out regarding statistical approaches: the features used and the selected learning algorithms. Aditya Joshi et al.'s survey states that even though \textit{``multiple variety of classifiers have been experimented for sarcasm detection most of the work conducted relies on \acrshort{svm}''} \cite{joshi2016automatic}.
+
+Authors in \cite{davidov2010semi} proposed a system that classified Twitter and Amazon documents by employing semi-supervised techniques. The dataset was composed of 5.9 million unique tweets that contained the \#sarcasm hashtag, which were pre-processed by removing any link appearance, users mentions and hashtags and replaced them by proper identification tags. The system relied on features such as \acrfullpl{hfw}, \acrfullpl{cw}, punctuation based features to create single entry feature vectors. The classification output was defined as a number from range 1 to 5 to measure the presence of sarcasm in the given text and performed with a \acrfull{knn}-like strategy \cite{davidov2010enhanced}. To evaluate the system 5-fold cross validation was employed. The experiment that best performed used all the listed features obtained and obtained a F1-score of 0.545 on Twitter messages and 0.827 in Amazon reviews.
+
+In 2012, Reyes et al. introduced the following features for irony detection: n-grams, \acrfull{pos} n-grams, funny profiling, positive/negative profiling, affective profiling and pleasantness profiling. \acrshort{nb}, \acrshort{svm} and \acrfull{dt} classifiers were evaluated by comaparing positive sets against three negative subsets, begin \acrshort{svm} the learning algorithm that scored the highest in two out of the three subsets with a F1-score of 0.747 and 0.891 respectively.\cite{reyes2012making}. In 2013, they explored the use of skip-gram and character n-gram-based features for detecting irony representativeness and relevance with the Toyota case study. Dividing the tweets into three levels of representativeness the proposed model obtained a 0.66 F1-score on the third level \cite{reyes2013multidimensional}.
+
+Regarding \acrshort{dl}, is a technology that is gaining popularity among researchers studying sarcasm and irony. Silvio Amir et al. in 2016 proposed a convolutional network-based system that learned content and context from user embeddings, achieving a 2\% improve in absolute accuracy compared to the Bamman and Smith's 2015 baseline system \cite{amir2016modelling}. 
+
+Authors in \cite{ghosh2016fracking} proposed a system that combined \acrfull{cnn}, \acrfull{lstm} and \acrfull{dnn}. They compare the approached system against recursive \acrshort{svm} and other datasets stating that their architecture obtains better F1-score than previous \acrshort{dl} solutions, obtaining 0.901.
