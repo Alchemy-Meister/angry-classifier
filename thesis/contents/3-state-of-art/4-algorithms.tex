@@ -70,7 +70,7 @@ It is important to remark that classification techniques perform their best when
 \subsection{General classification problem solving}
 \label{general_classificartion_problem_solving}
 
-For general classification problems solving, popular techniques consists on a process that starts with building classification models from a sample dataset \cite{witten2005data}. Each technique depends on a learning algorithm witch is in charge of generating the classification model. A good model should define the relationship between the input attribute set and its belonging category that suits the best. Therefore the model should be valid for both, the sample data used to generate the model and also for new unknown instances. Among popular classification techniques \acrfull{svm}, \acrfullpl{nn}, Naive Bayes or \acrfullpl{dt} can be found \cite{garje2016sentiment}.
+For general classification problems solving, popular techniques consists on a process that starts with building classification models from a sample dataset \cite{witten2005data}. Each technique depends on a learning algorithm witch is in charge of generating the classification model. A good model should define the relationship between the input attribute set and its belonging category that suits the best. Therefore, the model should be valid for both, the sample data used to generate the model and also for new unknown instances. Among popular classification techniques, \acrfull{svm}, \acrfullpl{nn}, Naive Bayes or \acrfullpl{dt} can be found \cite{garje2016sentiment}.
 
 \begin{figure}[!htp]
   \center
@@ -98,15 +98,15 @@ As shown in the Figure \ref{fig:classification_problem}, to solve a classificati
 \label{tab:confusion_matrix}
 \end{table}
 
-As a example, Table \ref{tab:confusion_matrix} represents the confusion matrix of a binary classification problem, in which the possible classes that can be assigned to a given instance are \textit{Yes} or \textit{No}. The values presented in this confusion matrix represents the counts of instances correctly and incorrectly classified as a means of model performance evaluation, being the diagonal of the table the instances classified correctly, the true positives (\acrshort{tp}) and negatives (\acrshort{tn}). The rest of the table corresponds to the number of instances that have been classified incorrectly, the false positives (\acrshort{fp}) and false negatives (\acrshort{fn}). The definition of a cell done by the value of the column and the row in which is positioned, read as the number instances of \textit{X} classified as \textit{Y}, where \textit{X} and \textit{Y} are the determined value of the row and column respectively. For instance, the cell $a$ is interpreted as the counts of Yes that have been classified as \textit{Yes}, the TP.
+As a example, Table \ref{tab:confusion_matrix} represents the confusion matrix of a binary classification problem, in which the possible classes that can be assigned to a given instance are \textit{Yes} or \textit{No}. The values presented in this confusion matrix represents the counts of instances correctly and incorrectly classified as a means of evaluation of the model performance, being the diagonal of the table the instances classified correctly, the true positives (\acrshort{tp}) and negatives (\acrshort{tn}). The rest of the table corresponds to the number of instances that have been classified incorrectly, the false positives (\acrshort{fp}) and false negatives (\acrshort{fn}). The definition of a cell is done by the value of the column and the row in which is positioned, read as the number instances of \textit{X} classified as \textit{Y}, where \textit{X} and \textit{Y} are the determined value of the row and column respectively. For instance, the cell $a$ is interpreted as the counts of Yes that have been classified as \textit{Yes}, the TP.
 
 Although the confusion matrix gives all the relevant information to determine how well the system has performed, sometimes is convenient to provide this information into a single value that summarizes the content of all the table. To do so, multiple performance metrics have been defined and one of those is the accuracy defined as:
 
 \[Overall\ accuracy=\frac{TP+TN}{TP+FP+FN+TN}\]
 
-Accuracy represents the percentage of correctly classified instances. However, using only accuracy may not be enough, as for example when the dataset is imbalanced or it has a majority of elements for a determined class. Of instance, on a naive classifier that always determined an instance as the element with the maximum number of appearances in the dataset, the accuracy of classifier results in a high value although, the model does not have predictive capacity. This is considered the accuracy paradox \cite{accuracyParadox} and thus, to avoid the scoring a misleading measurement, it is recommendable to combine its usage with other performance metrics such as precision and recall.
+Accuracy represents the percentage of correctly classified instances. However, using only accuracy may not be enough, as for example, when the dataset is imbalanced or it has a majority of elements for a determined class. For instance, on a naive classifier that always determined an instance as the element with the maximum number of appearances in the dataset, the accuracy of classifier results in a high value, although, the model does not have a real predictive capacity. This phenomena is considered the accuracy paradox \cite{accuracyParadox} and thus, to avoid the scoring a misleading measurement, it is recommendable to combine its usage with other performance metrics such as precision and recall.
 
-Translating the precision from information retrieval context it would answer to the question \textit{how many classified items are relevant for the current query?} and thus, the precision is defined as:
+By talking the definition of precision from information retrieval context, it would answer to the question \textit{how many classified items are relevant for the current query?} and thus, the precision is defined as:
 
 \[Precision=\frac{TP}{TP+FP}\]
 
@@ -187,13 +187,13 @@ asdasdasd \cite{berwick2003idiot}
 \subsection{Deep Learning: Convolutional Neural Network}
 \label{subsec:deep_learning}
 
-In this section we will explain the fundamental of the algorithm on which the our solution is basen on, \acrlong{cnn}, a technology that was designed thinking mainly on computer vision tasks, but has proven to also for well on \acrshort{nlp} \cite{zhang2015sensitivity}, \cite{kim2014convolutional}. To understand how \acrshort{cnn} work, first we need to understand what a convolution is.
+In this section we will explain the fundamental of the algorithm on which our solution is basen on, \acrlong{cnn}, a technology that was designed thinking mainly on computer vision tasks, but has proven to also for well on \acrshort{nlp} \cite{zhang2015sensitivity}, \cite{kim2014convolutional}. To understand how \acrshort{cnn} work, first we need to understand what a convolution is.
 
 \section{Convolution}
 
 A convolution could be defined as an integral that denotes the amount of overlap that the function $g$ shifts over another function $f$ (see figure \ref{fig:representation_convolution}).
 
-Mathematically, a convolution is the product of two functions $f$ and $g$, depending on the values of the overlap are finite or not, the convolution (single dimension) could be defined as \cite{convolution}: 
+Mathematically, a convolution is the product of two functions $f$ and $g$. Depending on the values of the overlap are finite or not, the convolution (single dimension) could be defined as \cite{convolution}: 
 
 \begin{figure}[!htp]
   \center
@@ -227,7 +227,7 @@ A multidimensional convolution of infinite range the definition becomes \cite{mu
   \label{fig:multidimension_convolution_infinite_range}
 \end{figure}
 
-In computer vision, images are transformed into two-dimensional functions, that can be represented as a matrix in which each value usually takes 0 or 1 values for black and white images or from 0 to 255 to gray-scale images. Most of the image transformation are based sliding window or function called ``kernel'', ``filter'' or ``feature detector'' \cite{cnnDennyBritz}, represented in figure \ref{fig:convolution_filter}.
+In computer vision, images are transformed into two-dimensional functions, that can be represented as a matrix in which each value usually takes 0 or 1 values for black and white images or from 0 to 255 to gray-scale images. Most of the image transformations are based sliding window or function called ``kernel'', ``filter'' or ``feature detector'' \cite{cnnDennyBritz} represented in figure \ref{fig:convolution_filter}.
 
 \begin{figure}[!htp]
   \center
@@ -238,7 +238,7 @@ In computer vision, images are transformed into two-dimensional functions, that 
 
 \section{Convolutional Neural Networks}
 
-\acrlong{cnn} are usually feed-forward type neural networks that concatenate multiple layers of convolutions with non linear activation functions as shown in figure \ref{fig:cnn_architecture}. The learning process of, for example, an image classification, learns the values by detecting the edges of the raw pixel values in the input of the \acrshort{cnn}. Over the following layers with the extraction of high level features, until reaching to last layer in which, all the fully connected layer classifies the objects by using the previously extracted features. 
+\acrlong{cnn} are usually feed-forward type neural networks that concatenate multiple layers of convolutions with non linear activation functions as shown in figure \ref{fig:cnn_architecture}. The learning process of, for example, an image classification, consist on learning relevant values by detecting the edges of the raw pixel values in the input of the \acrshort{cnn}. Over the following layers with the extraction of high level features, until reaching to last fully connected layer in which, the objects are classified by using the previously extracted features. 
 
 \begin{figure}[!htp]
   \center
@@ -247,9 +247,9 @@ In computer vision, images are transformed into two-dimensional functions, that 
   \label{fig:cnn_architecture}
 \end{figure}
 
-To apply the following architecture to \acrshort{nlp} related tasks, instead of a two convolution array that represents the image, each row of the matrix represents a token, usually being this tokens numerical representations of words or characters initialized with space vectors that are initialized with word2vec or GloVe algorithms. Then as with images each convolution layer extract features that are used on the last layer to categorize the given document as shown in figure \ref{fig:cnn_npl}. 
+To apply the following architecture to \acrshort{nlp} related tasks, instead of a two dimension convolution array that represents the image, each row of the matrix represents a token, usually being this tokens numerical representations of words or characters as space vectors that are initialized with word2vec or GloVe algorithms. Then, as with images each convolution layer extract features that are used on the last layer to categorize the given document as shown in figure \ref{fig:cnn_npl}. 
 
-There are multiple types of architectures that combine multiple pooling layers that reduce computation cost by sub-sampling the matrix on each filter. In addition, as done in image processing, multiple channels of \acrshort{cnn} could be used to process each color, this idea can also translate into \acrshort{nlp} tasks by processing different word embeddings in each layer or applying different filters per channel \cite{singhalborrow}.
+There are multiple types of architectures that combine multiple pooling layers that reduce computation cost by sub-sampling the matrix on each filter. In addition, multiple channels of \acrshort{cnn} could be used to process different word embeddings in each channel or applying different filters per channel \cite{singhalborrow}, an idea origins from image processing to analyze each color.
 
 \begin{figure}[htbp]
   \center

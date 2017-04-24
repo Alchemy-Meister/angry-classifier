@@ -7,10 +7,13 @@
 \RequirePackage{lmodern}
 
 \RequirePackage[UKenglish]{babel}       % LaTeX in English
-\RequirePackage{csquotes}               % Using british quotes
-\RequirePackage[citestyle=numeric-comp, % Defining the style for the biblography
-                bibstyle=numeric,
-                %style=trad-plain,
+\RequirePackage[
+                strict=true,                    %   - warning are errors now
+                style=english]
+                {csquotes}
+\RequirePackage[citestyle=numeric-comp,
+                bibstyle=ieee, % Defining the style for the biblography
+                %style=ieee,
                 %backref=true,
                 maxnames=99,
                 backrefstyle=two,
