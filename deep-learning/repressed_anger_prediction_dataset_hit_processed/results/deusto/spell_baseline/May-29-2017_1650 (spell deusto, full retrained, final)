@@ -1,0 +1,28 @@
+DEUSTO:
+{
+    "acc":0.5590361446,
+    "recall_macro":0.4699308473,
+    "precision_macro":0.4022901648,
+    "f1_macro":0.400806451,
+    "precision_micro":0.5590361446,
+    "recall_micro":0.5590361446,
+    "f1_micro":0.5590361446
+}
+
+JAPAN:
+{
+    "acc":0.5289156627,
+    "recall_macro":0.4716947767,
+    "precision_macro":0.3916899988,
+    "f1_macro":0.3915978694,
+    "precision_micro":0.5289156627,
+    "recall_micro":0.5289156627,
+    "f1_micro":0.5289156627
+}
+
+irony accuracy: 0.468085106383
+normal accuracy: 0.587912087912
+repressed anger accuracy: 0.431818181818
+explicit anger accuracy: 0.39896373057
+
+F1_SCORE DIFF: 0.0092085816

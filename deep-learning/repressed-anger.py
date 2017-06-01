@@ -18,11 +18,14 @@ import getopt
 import ujson, json, base64
 import numpy as np
 import pandas as pd
-from drawing_utils import EpochDrawer, ConfusionMatrixDrawer
 from collections import OrderedDict
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 CWD = os.getcwd()
+
+# Hack to import from parent folder.
+sys.path.append(SCRIPT_DIR + '/..')
+from drawing.drawing_utils import EpochDrawer, ConfusionMatrixDrawer
 
 USAGE_STRING = 'Usage: repressed-anger.py [-h] [--help] ' \
     + '[--dataset=path_to_original_dataset]' \

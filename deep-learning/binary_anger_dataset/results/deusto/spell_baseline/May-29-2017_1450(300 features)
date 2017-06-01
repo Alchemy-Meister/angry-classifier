@@ -1,0 +1,23 @@
+DEUSTO:
+{
+    "acc":0.7792718924,
+    "recall_macro":0.7792503337,
+    "precision_macro":0.7792424027,
+    "f1_macro":0.7792460328,
+    "precision_micro":0.7792718924,
+    "recall_micro":0.7792718924,
+    "f1_micro":0.7792718924
+}
+
+JAPAN:
+{
+    "acc":0.7825516563,
+    "recall_macro":0.7822707176,
+    "precision_macro":0.7831032905,
+    "f1_macro":0.7823080279,
+    "precision_micro":0.7825516563,
+    "recall_micro":0.7825516563,
+    "f1_micro":0.7825516563
+}
+
+F1_SCORE DIFF: 0.0030619951
