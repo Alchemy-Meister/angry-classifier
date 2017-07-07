@@ -5,10 +5,11 @@ from datetime import datetime
 from keras import backend as K
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 from keras.layers import Dense, Dropout, Activation, Embedding, Flatten
-from keras.layers import Convolution2D, MaxPooling2D, Merge
+from keras.layers import Convolution1D, GlobalMaxPooling1D, merge, Input
 from keras.layers.normalization import BatchNormalization
-from keras.models import Sequential
+from keras.models import Sequential, Model
 from keras.models import model_from_json
+from keras.preprocessing.sequence import pad_sequences
 from keras.utils.np_utils import to_categorical, probas_to_classes
 from sklearn.metrics import confusion_matrix, accuracy_score, f1_score, \
     precision_score, recall_score
@@ -19,12 +20,18 @@ import getopt
 import ujson, json, base64
 import numpy as np
 
+FILTSZ = [3, 4, 5]
 NUM_FILTERS = 200
 BATCH_SIZE = 50
 NB_EPOCH = 1000
 EVAL_PERIOD = 12
 PATIENCE = 20
 STOP_CONDITION = 'val_loss'
+DROPOUT = 0.5
+BATCH_NORMALIZATION = False
+BINARY = True
+BATCH_NORMALIZATION_RELU_SOFT = False
+DENSES = ['relu']
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 CWD = os.getcwd()
@@ -36,6 +43,7 @@ from drawing.drawing_utils import EpochDrawer, ConfusionMatrixDrawer
 TARGETS = ['train', 'test', 'all']
 
 USAGE_STRING = 'Usage: cnn.py [-h] [--help] --target=[train, test, all] ' \
+    + '--embedding_weights=path_to_embedding_weights' \
     + '--train=path_to_train_word2vec ' \
     + '--validation=path_to_validation_word2vect ' \
     + '--test=path_to_test_word2vec' \
@@ -61,16 +69,10 @@ def prepare_samples(piece_path, labels, max_phrase_length, model_size):
        
         encoder = one_hot_encoder(labels)
         for phrase in program:
-            X.append(np.array(phrase['word2vec']))
+            X.append(np.array(phrase['words']))
             y.append(encoder[phrase['label']])
     X = np.array(X)
-
-    if K.image_dim_ordering() == 'th':
-        X = X.reshape(X.shape[0], 1, max_phrase_length, model_size)
-        #input_shape = (1, img_rows, img_cols)
-    else:
-        X = X.reshape(X.shape[0], max_phrase_length, model_size, 1)
-        #input_shape = (img_rows, img_cols, 1)
+    X = pad_sequences(X, maxlen=max_phrase_length, padding='post')
     return X, y
 
 def one_hot_encoder(total_classes):
@@ -89,56 +91,86 @@ def find_1(one_hot):
     print 'not found'
 
 def generate_embedding_matrix(weights, max_phrase_length, trainable):
-    return Embedding(input_dim=weights.shape[0], output_dim=weights.shape[1], weights=[weights],  input_length=max_phrase_length, trainable=trainable)
+    return Embedding(input_dim=weights.shape[0], output_dim=weights.shape[1], \
+        weights=[weights],  input_length=max_phrase_length, trainable=trainable)
 
-def generate_model(model_size, max_phrase_length, num_categories):
-    branch_ngram_3 = Sequential()
+def generate_model(model_size, max_phrase_length, num_categories, \
+    embedding_weights, batch_normalization, dropout, trainable):
 
-    branch_ngram_3.add(Convolution2D(NUM_FILTERS, 3, model_size, \
-        input_shape=(1, max_phrase_length, model_size), \
-        border_mode='valid', activation='relu'))
-    branch_ngram_3.add(MaxPooling2D(pool_size=(max_phrase_length - 3 , 1)))
-    #branch_ngram_3.add(Flatten())
+    x_1 = Input(shape=(max_phrase_length,), dtype='int32', name='phrases')
 
-    branch_ngram_4 = Sequential()
-    branch_ngram_4.add(Convolution2D(NUM_FILTERS, 4, model_size, \
-        input_shape=(1, max_phrase_length, model_size), border_mode='valid',
-        activation='relu'))
-    branch_ngram_4.add(MaxPooling2D( \
-        pool_size=(max_phrase_length - 4 + 1, 1)) )
-    #branch_ngram_4.add(Flatten())
+    embd = generate_embedding_matrix(embedding_weights, max_phrase_length, \
+        trainable) (x_1)
 
-    branch_ngram_5 = Sequential()
-    branch_ngram_5.add(Convolution2D(NUM_FILTERS, 5, model_size, \
-        input_shape=(1, max_phrase_length, model_size), \
-        border_mode='valid', activation='relu'))
-    branch_ngram_5.add(MaxPooling2D( \
-        pool_size=(max_phrase_length - 5 + 1, 1)) )
-    #branch_ngram_5.add(Flatten())
+    joined = generate_parallel_convolutionals(FILTSZ, embd, NUM_FILTERS, \
+        max_phrase_length, model_size)
 
-    merged = Sequential()
-    # merged = Merge([branch_ngram_2, branch_ngram_3, branch_ngram_4], \
-    # merge_mode='concat')
+    if batch_normalization:
+        batch_norm = BatchNormalization()(joined)
+        drop = Dropout(dropout)(batch_norm)
+    else:
+        drop = Dropout(dropout)(joined)
 
-    merged.add(Merge([branch_ngram_3, branch_ngram_4, branch_ngram_5], \
-        mode='concat', concat_axis=2))
-    merged.add(Flatten())
-    merged.add(Dropout(0.5))
+    dense = generate_second_part_after_cnns(drop, dropout, 'main', \
+        DENSES, batch_normalization, BATCH_NORMALIZATION_RELU_SOFT, \
+        BINARY, 'softmax')
 
     # Add one or two Densa ReLu.
     # merged.add(Dense(512, activation='relu'))
     # merged.add(Dense(512, activation='relu'))
 
-    merged.add(Dense(num_categories))
+    input_weights = [x_1]
+    output_weights = [dense]
 
     # Add batch normalization layer
     # merged.add(BatchNormalization())
 
-    merged.add(Activation('softmax'))
-    merged.compile(loss='binary_crossentropy', optimizer='adam', \
-        metrics=['accuracy', 'mse', 'mae'])
+    #merged.compile(loss='binary_crossentropy', optimizer='adam', \
+    #    metrics=['accuracy', 'mse', 'mae'])
 
-    return merged
+    print "Len the inputs " + str(len(input_weights))
+    print "Len de outputs es " + str(len(output_weights))
+    model = Model(input=input_weights, output=output_weights)
+    model.compile(loss='binary_crossentropy', optimizer='adam', \
+        metrics=['accuracy', 'mse', 'mae'])
+    return model
+
+def generate_parallel_convolutionals(filtsz, embed, num_filters, \
+    max_phrase_length, model_size):
+    convs = []
+    joined = ""
+    if len (filtsz) > 1:
+        for i, fsz in enumerate(filtsz):
+            conv = Convolution1D(num_filters, fsz, activation='relu', \
+                input_length=max_phrase_length)(embed)
+            gmp = GlobalMaxPooling1D()(conv)
+            convs.append(gmp)
+        joined = merge(convs, mode='concat')
+    else:
+        conv = Convolution1D(num_filters, filtsz[0], activation='relu', \
+            input_length=max_phrase_length)(embed)
+        joined = GlobalMaxPooling1D()(conv)
+
+    return joined
+
+def generate_second_part_after_cnns(drop1, dropout, name, denses, \
+    batch_normalization, batch_normalization_relu_soft, binary, last_function):
+    
+    if denses[0] == "linear":
+        dense_relu = Dense(512)(drop1)
+    else:
+        dense_relu = Dense(512, activation=denses[0])(drop1)
+    for dense in denses[1:]:
+        drop = Dropout(dropout)(dense_relu)
+        dense_relu = Dense(512, activation=dense)(drop)
+    if batch_normalization_relu_soft:
+        dense_relu = BatchNormalization()(dense_relu)
+    print "Is binary?" + str(binary)
+    if binary:
+        softmax_len = 2
+    print "Last activation is " + last_function
+    dense = Dense(softmax_len, activation=last_function, name=name)(dense_relu)
+    return dense
 
 def save_model(model, model_output_path, model_weights_output_path, model_size):
     json_string = model.to_json()
@@ -203,10 +235,9 @@ def train(train_path, validation_path, model, labels, max_phrase_length, \
     print 'Training...'
     sys.stdout.flush()
 
-    model.fit([X_train, X_train, X_train], y_train, batch_size=BATCH_SIZE, \
-        nb_epoch=NB_EPOCH, \
-        validation_data=([X_validation, X_validation, X_validation], \
-            y_validation), callbacks=[checkpoint, early_stopping])
+    model.fit(X_train, y_train, batch_size=BATCH_SIZE, nb_epoch=NB_EPOCH, \
+        validation_data=(X_validation, y_validation), callbacks=[checkpoint, \
+        early_stopping])
 
     print 'Saving model...'
     sys.stdout.flush()
@@ -220,13 +251,13 @@ def test(test_path, model, labels, max_phrase_length, output_path, model_size):
     X_test, y_test = prepare_samples(test_path, labels, max_phrase_length, \
         model_size)
 
-    y_predict = model.evaluate([X_test, X_test, X_test], y_test, verbose=0, \
+    y_predict = model.evaluate(X_test, y_test, verbose=0, \
         batch_size=BATCH_SIZE)
 
     print 'The metrics keras is evaluating are: ' + str(model.metrics_names) \
     + ' and its results: ' + str(y_predict)
     # Using Scikit in order to evaluate the model.
-    y_predict = model.predict([X_test, X_test, X_test])
+    y_predict = model.predict(X_test)
     y_predict = probas_to_classes(y_predict)
     y_raw_test = []
     for y1 in y_test:
@@ -276,6 +307,7 @@ def main(argv):
     distribution_path = None
     model_path = None
     weights_path = None
+    embedding_weights = None
 
     dataset_result_output_path = None
     model_output_path = None
@@ -286,9 +318,12 @@ def main(argv):
     merged = None
     dataset_name = None
 
+    trainable = False
+
     try:
-        opts, args = getopt.getopt(argv,'h',['train=', 'validation=','test=', \
-            'load_model=', 'load_weights=','distribution=', 'target=', 'help'])
+        opts, args = getopt.getopt(argv,'h',['embedding_weights=', 'train=', \
+            'validation=','test=', 'load_model=', 'load_weights=', \
+            'distribution=', 'target=', 'help'])
     except getopt.GetoptError:
         print 'Error: Unknown parameter. %s' % USAGE_STRING
         sys.exit(2)
@@ -297,6 +332,8 @@ def main(argv):
         if o == '-h' or o == '--help':
             print USAGE_STRING
             sys.exit(0)
+        elif o == '--embedding_weights':
+            embedding_weights = check_valid_path(a, 'embeddings weights')
         elif o == '--train':
             train_path = check_valid_path(a, 'train dataset')
         elif o == '--validation':
@@ -308,7 +345,7 @@ def main(argv):
         elif o == '--load_model':
             model_path = check_valid_path(a, 'model')
         elif o == '--load_weights':
-            weights_path = check_valid_path(a, 'weights')
+            weights_path = check_valid_path(a, 'model weights')
         elif o == '--target':
             valid_target = False
             for value in TARGETS:
@@ -323,9 +360,11 @@ def main(argv):
                 sys.exit(2)
 
     if target == TARGETS[0] or target == TARGETS[2]:
-        if train_path == None or validation_path == None:
-            print 'Error: Train and Validation dataset paths are required. %s' \
-                % USAGE_STRING
+        if train_path == None or validation_path == None or embedding_weights \
+            == None:
+            
+            print 'Error: Embedding weights and Train and Validation dataset' \
+                + 'paths are required. %s' % USAGE_STRING
             sys.exit(2)
         else:
             dataset_name = train_path.rsplit('/', 1)[1].split('_train.json')[0]
@@ -339,6 +378,8 @@ def main(argv):
             model_weights_output_path = os.path.join( \
                 dataset_result_output_path, 'model_weights' )
             check_valid_dir(model_weights_output_path)
+
+            embedding_weights = np.load(embedding_weights)
 
     if target == TARGETS[1] or target == TARGETS[2]:
         if test_path == None:
@@ -380,15 +421,17 @@ def main(argv):
     print "Number of epochs: " + str(NB_EPOCH)
     print "Evaluation period: " + str(EVAL_PERIOD)
     print 'Max. phrase length: ' + str(max_phrase_length)
+    print 'Embeddding trainables:' + str(trainable)
     print 'Building model...'
 
     if target == TARGETS[1]:
         merged = load_model(model_path, weights_path)
     else:
-        merged = generate_model(model_size, max_phrase_length, num_categories)
+        merged = generate_model(model_size, max_phrase_length, num_categories, \
+            embedding_weights, BATCH_NORMALIZATION, DROPOUT, trainable)
     
     merged.summary()
-    
+
     # Execute training if target is train or all.
     if target == TARGETS[0] or target == TARGETS[2]:
         train(train_path, validation_path, merged, labels, max_phrase_length, \
