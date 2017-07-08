@@ -39,11 +39,13 @@ NUM_MODEL_FEATURES = 300
 
 CLEAN_WORD_LIST = ['URL', 'MENTION']
 
-USAGE_STRING = 'Usage: dataset_w2v.py ' \
+USAGE_STRING = 'Usage: dataset_w2v_embeddings_ids.py ' \
             + '[-d] [-g] [-i] [-v] [-s] [-h] [--sample_division] [--indent] ' \
             + '[--validation] [--spell_check] [--size=] [--split_ratio=] ' \
             + '[--max_phrase_length=] [--twitter_model] [--delete-hashtags] ' \
-            + '[--help] path_to_dataset'
+            + '[--help] --anger_dataset=path_to_dataset ' \
+            + '--irony_dataset=path_to_dataset' \
+            + '--repressed_dataset=path_to_dataset'
 
 CSV_COLUMNS = ['tweet_id', 'label', 'author', 'content']
 
@@ -117,6 +119,7 @@ def word2vector(model, word, spell_check):
 def main(argv):
 
     divide = False
+    fake_divide = divide
     indent = False
     validation = False
     delete_hashtags = False
@@ -124,20 +127,28 @@ def main(argv):
     size = None
     force_max_phrase_length = None
     use_twitter_model = False
-    preprocess_only = True
+    preprocess_only = False
     task_description = 'Calculating Word2Vec values'
 
     model_rel_path = '/model/GoogleNews-vectors-negative300.bin'
 
     split_ratios = []
     split_ratios_lenght = 0
-    output_path = None
+    output_paths = [None, None, None]
+
+    dataset_path = None
+    anger_dataset = None
+    irony_dataset = None
+    repressed_dataset = None
+
+    dfs = [None, None, None]
 
     try:
         opts, args = getopt.getopt(argv,'divtsh',['sample_division', 'indent', \
             'validation', 'size=', 'split_ratio=', 'spell_check', 'help', \
             'max_phrase_length=', 'delete-hashtags', 'twitter_model',\
-            'preprocess_only'])
+            'preprocess_only', 'anger_dataset=', 'irony_dataset=', \
+            'repressed_dataset='])
     except getopt.GetoptError:
         print 'ERROR: Unknown parameter. %s' % USAGE_STRING
         sys.exit(2)
@@ -148,12 +159,14 @@ def main(argv):
             exit(0)
         elif o == '-d' or o == '--sample_division':
             divide = True
+            fake_divide = divide
             task_description = 'Calculating Word2Vec train values'
             task2_description = 'Calculating Word2Vec test values'
         elif o == '-i' or o == '--indent':
             indent = True
         elif o == '-v' or o == '--validation':
             divide = True
+            fake_divide = divide
             task_description = 'Calculating Word2Vec train values'
             task2_description = 'Calculating Word2Vec validation values'
             validation = True
@@ -191,6 +204,12 @@ def main(argv):
             NUM_MODEL_FEATURES = 400
         elif o == '--preprocess_only':
             preprocess_only = True
+        elif o == '--anger_dataset':
+            anger_dataset = a
+        elif o == '--irony_dataset':
+            irony_dataset = a
+        elif o == '--repressed_dataset':
+            repressed_dataset = a
 
     if split_ratios_lenght != 0:
         if validation and split_ratios_lenght != 3:
@@ -200,31 +219,37 @@ def main(argv):
             print 'Error: 2 split ratios must be provided on sample division.'
             sys.exit(2)
 
-    if len(args) != 1:
-        print 'Error: Dataset path must be provided.'
+    if anger_dataset == None or irony_dataset == None \
+        or repressed_dataset == None:
+        
+        print 'Error: Anger, Irony and Repressed dataset paths must be' \
+        + 'provided.'
+        
         sys.exit(2)
     else:
-        args = args[0]
+        paths = [anger_dataset, irony_dataset, repressed_dataset]
 
-        if not os.path.isabs(args):
-            # Make relative path absolute.
-            args = os.path.join(CWD, args)
+        for index, path in enumerate(paths):
+            if not os.path.isabs(path):
+                # Make relative path absolute.
+                path = os.path.join(CWD, path)
 
-        if os.path.isfile(args):
-            # Get dataset dir path.
-            source_path = args.rsplit('/', 1)
-            dataset_path = source_path[0]
+            if os.path.isfile(path):
+                # Get dataset dir path.
+                source_path = path.rsplit('/', 1)
+                dataset_path = source_path[0]
 
-            # Generate output dir path.
-            check_valid_dir(os.path.join(dataset_path, 'json/'))
-            output_path = os.path.join(dataset_path, 'json/' \
-                + source_path[1].rsplit('.csv')[0])
+                # Generate output dir path.
+                check_valid_dir(os.path.join(dataset_path, 'json/'))
+                output_paths[index] = os.path.join(dataset_path, 'json/' \
+                    + source_path[1].rsplit('.csv')[0])
 
-            # Loads CSV into dataframe.
-            df = pd.read_csv(args, header=0, usecols=LOAD_COLUMNS)
-        else:
-            print 'Error: Invalid dataset file.'
-            sys.exit(2)
+                # Loads CSV into dataframe.
+                dfs[index] = pd.read_csv(path, header=0, usecols=LOAD_COLUMNS)
+
+            else:
+                print 'Error: Invalid dataset file.'
+                sys.exit(2)
 
     # Load heavy modules.
     # Start loading gensim module.
@@ -251,37 +276,6 @@ def main(argv):
     logger.info('Model loading complete, elapsed time: %s', \
         str(datetime.now() - model_load_start_time))
 
-    output = []
-    validation_or_test_output = []
-    test_output = []
-    distribution = {}
-    distribution['classes'] = {}
-
-    if size is not None and size <= len(df.index):
-        df_length = size
-        # Under-size the dataframe to match requested size.
-        df = df.take(np.random.permutation(df.index)[:df_length])
-    else:
-        df_length = len(df.index)
-
-    if split_ratios_lenght == 0:
-        # Designates 70% of the dataset for training file.
-        train_length = ceil(df_length * 0.7)
-
-        # Designates 15% of the dataset for validation and testing.
-        if validation:
-            test_start = (train_length + (df_length - train_length) / 2 ) - 1
-    else:
-        train_length = round(df_length * split_ratios[0]) -1
-
-        if validation:
-            test_start = train_length \
-                + floor(df_length * split_ratios[1]) - 1
-
-    max_word_per_sentence = 0
-
-    preprocess_index = 0
-
     # Twitter preprocessing: replacing URLs and Mentions
     twitter_url_str = (ur'http[s]?://(?:[a-zA-Z]|[0-9]|' \
         ur'[$+*%/@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
@@ -295,124 +289,173 @@ def main(argv):
 
     emoticon_regex = re.compile(emoticon_str)
 
-    for tweet in tqdm(df.itertuples(), desc='Tweet preprocessing', \
-        total=df_length):
+    sentences = []
 
-        label = tweet[1]
+    outputs = [None, None, None]
+    validation_or_test_outputs = [None, None]
+    test_outputs = [None, None]
+    distributions = [None, None, None]
 
-        # Clean text of new lines.
-        preprocessed_tweet = tweet[2].replace('\n', ' ');
+    max_word_per_sentence = 0
 
-        # Unescape possible HTML entities.
-        preprocessed_tweet = BeautifulSoup(preprocessed_tweet, 'html.parser') \
-            .prettify()
+    for index, df in enumerate(dfs):
 
-        # Lowercase tweet text.
-        preprocessed_tweet = preprocessed_tweet.lower()
+        output = []
+        validation_or_test_output = []
+        test_output = []
+        distribution = {}
+        distribution['classes'] = {}
 
-        # Remove URLs and mentions with representative key code.
-        preprocessed_tweet = re.sub(twitter_url_regex, 'URL', \
-            preprocessed_tweet)
-        preprocessed_tweet = re.sub(twitter_mention_regex, ' MENTION', \
-            preprocessed_tweet)
+        if size is not None and size <= len(df.index):
+            df_length = size
+            # Under-size the dataframe to match requested size.
+            df = df.take(np.random.permutation(df.index)[:df_length])
+        else:
+            df_length = len(df.index)
 
-        if delete_hashtags:
-            preprocessed_tweet = re.sub(twitter_hashtag_regex, 'TAG', \
+        if split_ratios_lenght == 0:
+            # Designates 70% of the dataset for training file.
+            train_length = ceil(df_length * 0.7)
+
+            # Designates 15% of the dataset for validation and testing.
+            if validation:
+                test_start = (train_length + (df_length - train_length) / 2 ) \
+                - 1
+        else:
+            train_length = round(df_length * split_ratios[0]) -1
+
+            if validation:
+                test_start = train_length \
+                    + floor(df_length * split_ratios[1]) - 1
+
+        preprocess_index = 0
+
+        # Do not divide the repressed anger dataset
+        if index == 2:
+            fake_divide = False
+
+        for tweet in tqdm(df.itertuples(), desc='Tweet preprocessing', \
+            total=df_length):
+
+            label = tweet[1]
+
+            # Clean text of new lines.
+            preprocessed_tweet = tweet[2].replace('\n', ' ');
+
+            # Unescape possible HTML entities.
+            preprocessed_tweet = BeautifulSoup(preprocessed_tweet, \
+                'html.parser') .prettify()
+
+            # Lowercase tweet text.
+            preprocessed_tweet = preprocessed_tweet.lower()
+
+            # Remove URLs and mentions with representative key code.
+            preprocessed_tweet = re.sub(twitter_url_regex, 'URL', \
+                preprocessed_tweet)
+            preprocessed_tweet = re.sub(twitter_mention_regex, ' MENTION', \
                 preprocessed_tweet)
 
-        # Search for emoticons.
-        matches = re.finditer(emoticon_regex, preprocessed_tweet)
+            if delete_hashtags:
+                preprocessed_tweet = re.sub(twitter_hashtag_regex, 'TAG', \
+                    preprocessed_tweet)
 
-        # for match_num, match in enumerate(matches):
-        #     print match.group()
-        #     # TODO Compare text file.
-        #     # SAVE data into the model.
-            
-        #     break;
+            # Search for emoticons.
+            matches = re.finditer(emoticon_regex, preprocessed_tweet)
 
-        # Removes all punctuation, contraction included.
-        # preprocessed_tweet =  preprocessed_tweet.encode('utf-8') \
-        #     .translate(None, string.punctuation)
-        # preprocessed_tweet.decode('utf-8')
-        #
-        # Trims generated string.
-        # tweet_words = preprocessed_tweet.strip()
+            # for match_num, match in enumerate(matches):
+            #     print match.group()
+            #     # TODO Compare text file.
+            #     # SAVE data into the model.
+                
+            #     break;
 
-        # Removes punctuation, except contractions.
-        # tweet_words = [word.strip(string.punctuation) \
-        #    for word in preprocessed_tweet.split()]
+            # Removes all punctuation, contraction included.
+            # preprocessed_tweet =  preprocessed_tweet.encode('utf-8') \
+            #     .translate(None, string.punctuation)
+            # preprocessed_tweet.decode('utf-8')
+            #
+            # Trims generated string.
+            # tweet_words = preprocessed_tweet.strip()
 
-        # Removes punctuation, contraction included and separate them.
-        tokenizer = RegexpTokenizer(r'\w+')
-        tweet_words = tokenizer.tokenize(preprocessed_tweet)
+            # Removes punctuation, except contractions.
+            # tweet_words = [word.strip(string.punctuation) \
+            #    for word in preprocessed_tweet.split()]
 
-        # for word_index in xrange(len(tweet_words)):
-        #     word = tweet_words[word_index]
+            # Removes punctuation, contraction included and separate them.
+            tokenizer = RegexpTokenizer(r'\w+')
+            tweet_words = tokenizer.tokenize(preprocessed_tweet)
 
-        #     try:
-        #         vector = model[word].tolist()
-        #     except KeyError:
-        #         if not word.isdigit() and word not in CLEAN_WORD_LIST:
-        #             corrected_word = spell.correction(word)
-        #             if word != corrected_word:
-        #                 print word + ': ' + corrected_word
-        #                 tweet_words[word_index] = corrected_word
+            # for word_index in xrange(len(tweet_words)):
+            #     word = tweet_words[word_index]
 
-        # Removes stopwords.
-        tweet_words = [word for word in tweet_words \
-            if word and word not in stop_words]
+            #     try:
+            #         vector = model[word].tolist()
+            #     except KeyError:
+            #         if not word.isdigit() and word not in CLEAN_WORD_LIST:
+            #             corrected_word = spell.correction(word)
+            #             if word != corrected_word:
+            #                 print word + ': ' + corrected_word
+            #                 tweet_words[word_index] = corrected_word
 
-        word_count = len(tweet_words)
+            # Removes stopwords.
+            tweet_words = [word for word in tweet_words \
+                if word and word not in stop_words]
 
-        if divide and preprocess_index >= train_length:
-            # Split data into validation file.
-            if not validation or preprocess_index <= test_start:
-                validation_or_test_output.append({'label': label, \
-                    'words': tweet_words, 'word2vec': []});
+            word_count = len(tweet_words)
+
+            sentences.append(tweet_words)
+
+            if fake_divide and preprocess_index >= train_length:
+                # Split data into validation file.
+                if not validation or preprocess_index <= test_start:
+                    validation_or_test_output.append({'label': label, \
+                        'words': tweet_words});
+                else:
+                    # Split data into test validation file.
+                    test_output.append({'label': label, 'words': tweet_words});
+            elif fake_divide and preprocess_index < train_length:
+                # Split data into train file.
+                output.append({'label': label, 'words': tweet_words});
+            elif not fake_divide:
+                # Adds all the data to a single file, without splitting.
+                output.append({'label': label, 'words': tweet_words});
+
+            # Update largest sentence's word number.
+            if max_word_per_sentence < word_count:
+                max_word_per_sentence = word_count
+
+            # Calculates dataset class distribution.
+            if label in distribution['classes']:
+                distribution['classes'][label] += 1
             else:
-                # Split data into test validation file.
-                test_output.append({'label': label, \
-                    'words': tweet_words, 'word2vec': []});
-        elif divide and preprocess_index < train_length:
-            # Split data into train file.
-            output.append({'label': label, 'words': tweet_words, \
-                'word2vec': []});
-        elif not divide:
-            # Adds all the data to a single file, without splitting.
-            output.append({'label': label, 'words': tweet_words, \
-                'word2vec': []});
+                distribution['classes'][label] = 1
 
-        # Update largest sentence's word number.
-        if max_word_per_sentence < word_count:
-            max_word_per_sentence = word_count
+            # Update index.
+            preprocess_index += 1
 
-        # Calculates dataset class distribution.
-        if label in distribution['classes']:
-            distribution['classes'][label] += 1
-        else:
-            distribution['classes'][label] = 1
+        outputs[index] = output
+        if index != 2:
+            validation_or_test_outputs[index] = validation_or_test_output
+            test_outputs[index] = test_output
+        
+        distributions[index] = distribution
 
-        # Update index.
-        preprocess_index += 1
-
+    # Release memory
     del twitter_url_regex
     del twitter_mention_regex
     del twitter_hashtag_regex
     del emoticon_regex
     del stop_words
+    del dfs
+
+    fake_divide = divide
 
     if force_max_phrase_length != None:
         max_word_per_sentence = force_max_phrase_length
 
-    distribution['max_phrase_length'] = max_word_per_sentence
-    distribution['model_feature_length'] = NUM_MODEL_FEATURES
-
-    sentences = [dic['words'] for dic in output]
-    if divide:
-        if validation:
-            sentences.extend([dic['words'] for dic in test_output])
-        sentences.extend( \
-                [dic['words'] for dic in validation_or_test_output] )
+    for index, distribution in enumerate(distributions):
+        distributions[index]['max_phrase_length'] = max_word_per_sentence
+        distributions[index]['model_feature_length'] = NUM_MODEL_FEATURES
 
     word_id_tokenizer = Tokenizer()
     word_id_tokenizer.fit_on_texts(sentences)
@@ -435,87 +478,101 @@ def main(argv):
             else:
                 unknown_words[word] = 1
     print "Number of unknown tokens: " + str(len(unknown_words))
-    print type(sequences_phrases)
-    print type(weights)
 
     # Release memory.
     del model
-    del df
+
+    if not preprocess_only:
+
+        irony_pad = 0
+
+        for index in xrange(len(outputs)):
+            
+            if index == 2:
+                fake_divide = False
+
+            for train_index in trange(len(outputs[index]), \
+                desc=task_description, total=len(outputs[index])):
+                
+                outputs[index][train_index]['words'] = sequences_phrases[ \
+                    irony_pad + train_index]
+
+            # Optional if statement to hide console progress bar if not needed.
+            if fake_divide:
+                train_index += 1
+                for val_test_index in trange(len( \
+                    validation_or_test_outputs[index]), \
+                    desc=task2_description, \
+                    total=len(validation_or_test_outputs[index])):
+
+                    validation_or_test_outputs[index][val_test_index]['words'] \
+                        = sequences_phrases[irony_pad + train_index \
+                        + val_test_index]
+
+                if validation:
+                    val_test_index += 1
+                    for test_index in trange(len(test_outputs[index]), \
+                        desc='Calculating Word2Vec test values', \
+                        total=len(test_outputs[index])):
+
+                        test_outputs[index][test_index]['words'] = \
+                            sequences_phrases[irony_pad + train_index \
+                            + val_test_index + test_index]
+
+            irony_pad = train_index + val_test_index + test_index + 1
+
+    fake_divide = divide
 
     serialization_start_time = datetime.now()
-
     if not preprocess_only:
-        for train_index in trange(len(output), desc=task_description, \
-            total=len(output)):
+        for index, output_path in enumerate(output_paths):
+            
+            if index == 2:
+                fake_divide = False
 
-            process_sample(model, output, train_index, max_word_per_sentence, \
-                spell_check)
+            if fake_divide:
+                if validation:
+                    logger.info('Serializing JSON into train, ' \
+                        + 'validation and test files.')
+                    
+                    # Write validation data to a JSON file.
+                    serialize_sample(output_path + '_validation.json', \
+                        validation_or_test_outputs[index], indent)
 
-        # Optional if statement to hide console progress bar when not needed.
-        if divide:
-            for val_test_index in trange(len(validation_or_test_output), \
-                desc=task2_description, total=len(validation_or_test_output)):
+                else:
+                    logger.info('Serializing JSON into train and test files.')
 
-                process_sample(model, validation_or_test_output, \
-                    val_test_index, max_word_per_sentence, spell_check)
+                # Write test data to a JSON file.
+                serialize_sample(output_path + '_test.json', \
+                    test_outputs[index], indent)
 
-            if validation:
-                for test_index in trange(len(test_output), \
-                    desc='Calculating Word2Vec test values', \
-                    total=len(test_output)):
-
-                    process_sample(model, test_output, test_index, \
-                        max_word_per_sentence, spell_check)
-
-    if not preprocess_only:
-        if divide:
-            if validation:
-                logger.info('Serializing JSON into train, ' \
-                    + 'validation and test files.')
-                
-                # Write validation data to a JSON file.
-                serialize_sample(output_path + '_validation.json', \
-                    validation_or_test_output, indent)
-                
-                # Resealse memory.
-                del validation_or_test_output
+                # Write train data to a JSON file.
+                serialize_sample(output_path + '_train.json', outputs[index], \
+                    indent)
 
             else:
-                logger.info('Serializing JSON into train and test files.')
 
-            # Write test data to a JSON file.
-            serialize_sample(output_path + '_test.json', \
-                test_output, indent)
-            
-            # Resealse memory.
-            del test_output
-            gc.collect()
+                logger.info('Serializing JSON into a file.')
 
-            # Write train data to a JSON file.
-            serialize_sample(output_path + '_train.json', output, \
-                indent)
-            
-            # Resealse memory.
-            del output
+                # Write data to a JSON file.
+                serialize_sample(output_path + '.json', \
+                    outputs[index], indent)
 
-        else:
+        # Release memory
+        del validation_or_test_outputs
+        del test_outputs
 
-            logger.info('Serializing JSON into a file.')
+        np.save(os.path.join(dataset_path, 'embedding_weights.npy'), weights)
 
-            # Write data to a JSON file.
-            serialize_sample(output_path + '.json', \
-                output, indent)
-
-            # Resealse memory.
-            del output
-
-    with codecs.open(output_path + DISTRIBUTION + '.json', 'w', \
+    for index, distribution in enumerate(distributions):
+        with codecs.open(output_paths[index] + DISTRIBUTION + '.json', 'w', \
             encoding='utf-8') as dout:
 
-        dout.write(ujson.dumps(distribution, indent=4))
+            dout.write(ujson.dumps(distribution, indent=4))
 
     # Release memory.
-    del distribution
+    del distributions
+    del output_paths
 
     logger.info('Serialization finished, elapsed time: %s', \
         str(datetime.now() - serialization_start_time))
