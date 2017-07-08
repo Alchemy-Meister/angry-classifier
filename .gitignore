@@ -1,6 +1,8 @@
 .DS_Store
 json/
 
+*.npy
+
 *.bin
 datasets/crowdflower/json/*.json
 datasets/Wang/json/*.json

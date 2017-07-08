@@ -1,4 +1,5 @@
 boto==2.43.0
+beautifulsoup4==4.6.0
 bz2file==0.98
 funcsigs==1.0.2
 gensim==0.13.3

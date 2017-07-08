@@ -8,6 +8,7 @@ from keras.layers import Dense, Dropout, Activation, Embedding, Flatten
 from keras.layers import Convolution2D, MaxPooling2D, Merge
 from keras.models import Sequential
 from keras.models import model_from_json
+from keras.preprocessing.sequence import pad_sequences
 from keras.utils.np_utils import to_categorical, probas_to_classes
 from sklearn.metrics import confusion_matrix, accuracy_score, f1_score, \
     precision_score, recall_score
@@ -55,17 +56,14 @@ def json_numpy_obj_hook(dct):
 
 def prepare_samples(piece_path, max_phrase_length, model_length):
     X = []
-    y = []
     with open(piece_path, 'r') as piece:
         program = json.load(piece, object_hook=json_numpy_obj_hook)
        
-        encoder = one_hot_encoder(labels)
         for phrase in program:
             X.append(np.array(phrase['words']))
-            y.append(encoder[phrase['label']])
     X = np.array(X)
     X = pad_sequences(X, maxlen=max_phrase_length, padding='post')
-    return X, y
+    return X
 
 def one_hot_encoder(total_classes):
     encoder = {}
@@ -272,7 +270,7 @@ def main(argv):
 
     # Loads word embedding dataset.
     X_predict = prepare_samples(word2vec_dataset_path, max_phrase_length, \
-        model_length)
+    model_length)
 
     predicted_distribution = {'class': {}, 'category': {}}
 
