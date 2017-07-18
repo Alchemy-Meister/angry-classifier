@@ -61,7 +61,7 @@ def prepare_samples(piece_path, max_phrase_length, model_length, num_instances):
     with open(piece_path, 'r') as piece:
         program = json.load(piece, object_hook=json_numpy_obj_hook)
         program = program[:num_instances]
-
+        
         for phrase in program:
             X.append(np.array(phrase['words']))
     X = np.array(X)
@@ -278,7 +278,7 @@ def main(argv):
 
     # Loads word embedding dataset.
     X_predict = prepare_samples(word2vec_dataset_path, max_phrase_length, \
-    model_length, df_length)
+        model_length, df_length)
 
     predicted_distribution = {'class': {}, 'category': {}}
 
