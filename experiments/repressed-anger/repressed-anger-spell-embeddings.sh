@@ -1,5 +1,5 @@
 python ../../deep-learning/repressed-anger-embeddings.py \
-    --dataset=../../datasets/merged/repressed_anger_prediction_dataset_hit_processed.csv \
+    --dataset=../../datasets/merged/repressed_anger_prediction_dataset_hit_reprocessed.csv \
     --anger_dir=../../deep-learning/binary_anger_dataset/ \
     --anger_weights_filename=02-0.47-300.hdf5 \
     --anger_distribution=../../datasets/split/json/binary_anger_dataset_distribution.json \

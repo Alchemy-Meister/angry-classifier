@@ -2,6 +2,7 @@
 json/
 
 *.npy
+*.h5
 
 *.bin
 datasets/crowdflower/json/*.json
