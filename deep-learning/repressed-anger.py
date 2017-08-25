@@ -8,6 +8,7 @@ from keras.layers import Dense, Dropout, Activation, Embedding, Flatten
 from keras.layers import Convolution2D, MaxPooling2D, Merge
 from keras.models import Sequential
 from keras.models import model_from_json
+from keras.preprocessing.sequence import pad_sequences
 from keras.utils.np_utils import to_categorical, probas_to_classes
 from sklearn.metrics import confusion_matrix, accuracy_score, f1_score, \
     precision_score, recall_score
@@ -36,11 +37,13 @@ USAGE_STRING = 'Usage: repressed-anger.py [-h] [--help] ' \
     + '[--irony_model_weights=anger_weights_filename] ' \
     + '[--irony-distribution=irony_distribution_path]'
 
-CSV_COLUMNS = ['tweet_id', 'label', 'author', 'content', 'manual_label']
+CSV_COLUMNS = ['tweet_id', 'author', 'content', 'manual_label', 'label_1', \
+    'label_2']
+CSV_LABELS = CSV_COLUMNS[-2:]
 
 # Author column is not required.
 COMPULSORY_COLUMNS = list(CSV_COLUMNS)
-del COMPULSORY_COLUMNS[2]
+del COMPULSORY_COLUMNS[1]
 
 def json_numpy_obj_hook(dct):
     """Decodes a previously encoded numpy ndarray with proper shape and dtype.
@@ -53,21 +56,16 @@ def json_numpy_obj_hook(dct):
         return np.frombuffer(data, dct['dtype']).reshape(dct['shape'])
     return dct
 
-def prepare_samples(piece_path, max_phrase_length, model_length):
+def prepare_samples(piece_path, max_phrase_length, model_length, num_instances):
     X = []
     with open(piece_path, 'r') as piece:
         program = json.load(piece, object_hook=json_numpy_obj_hook)
-
+        program = program[:num_instances]
+        
         for phrase in program:
-            X.append(np.array(phrase['word2vec']))
+            X.append(np.array(phrase['words']))
     X = np.array(X)
-
-    if K.image_dim_ordering() == 'th':
-        X = X.reshape(X.shape[0], 1, max_phrase_length, model_length)
-        #input_shape = (1, img_rows, img_cols)
-    else:
-        X = X.reshape(X.shape[0], max_phrase_length, model_length, 1)
-        #input_shape = (img_rows, img_cols, 1)
+    X = pad_sequences(X, maxlen=max_phrase_length, padding='post')
     return X
 
 def one_hot_encoder(total_classes):
@@ -86,7 +84,7 @@ def load_model(model_path, weights_path):
 
     model = model_from_json(model_str)
     model.load_weights(weights_path)
-    model.compile(loss='categorical_crossentropy', optimizer='adam', \
+    model.compile(loss='binary_crossentropy', optimizer='adam', \
         metrics=['accuracy', 'mse', 'mae'])
 
     return model
@@ -273,13 +271,19 @@ def main(argv):
     df = pd.read_csv(dataset_path, header=0, \
         dtype={COMPULSORY_COLUMNS[0]: np.int64})
 
+    # Maintain only manually labeled tweets.
+    df = df[~df[COMPULSORY_COLUMNS[3]].isnull()]
+
+    df_length = len(df.index)
+
     # Loads word embedding dataset.
     X_predict = prepare_samples(word2vec_dataset_path, max_phrase_length, \
-        model_length)
+        model_length, df_length)
 
     predicted_distribution = {'class': {}, 'category': {}}
 
     # Prediction and evaluation for each classifier.
+    label_id = 0;
     for classifier_name, classifier_dict in classifiers.iteritems():
 
         # Load model weights path into the dictionary.
@@ -289,9 +293,10 @@ def main(argv):
 
         model = load_model(classifier_dict[classifiers_attr_str[1]], \
             classifier_dict[classifiers_attr_str[2]])
+        model.summary()
 
         # Dataset prediction.
-        y_predict = model.predict([X_predict, X_predict, X_predict])
+        y_predict = model.predict(X_predict)
         # Calculates prediction's one hot encoder
         y_predict = probas_to_classes(y_predict)
 
@@ -308,14 +313,19 @@ def main(argv):
 
             # Saves the number of correctly classified tweets number per label.
             predicted_distribution['class'][labels[index]] = len(df[ 
-                (df[COMPULSORY_COLUMNS[1]] == labels[index]) \
-                & (df[classifier_name] == df[COMPULSORY_COLUMNS[1]]) ].index)
+                (df[CSV_LABELS[label_id]] == labels[index]) \
+                & (df[classifier_name] == df[CSV_LABELS[label_id]]) ].index)
+
+            # Calculates number of labels per type in dataset.
+            predic_distribution['classes'][labels[index]] = \
+                len(df[labels[index] == df[CSV_LABELS[label_id]]])
 
         # Saves the number of correctly classified tweets per classifier.
         predicted_distribution['category'][classifier_name] = \
-            len(df[df[classifier_name] == df[COMPULSORY_COLUMNS[1]]].index)
+            len(df[df[classifier_name] == df[CSV_LABELS[label_id]]].index)
 
-    # Calculates accuracy per label.
+        label_id += 1
+
     for label, valid_instance_num in predic_distribution['classes'].iteritems():
         num_predicted_label = float(predicted_distribution['class'][label])
 
@@ -349,15 +359,12 @@ def main(argv):
     del predic_distribution
     print ''
 
-    print 'Dataset length: ' + str(len(df.index))
-    print ''
-
-    manual_labeled_tweets = df[~df[COMPULSORY_COLUMNS[3]].isnull()]
+    manual_labeled_tweets = df
 
     print 'Compared to manual classification'
 
     y_predict = manual_labeled_tweets[result_col]
-    actual_y = manual_labeled_tweets[COMPULSORY_COLUMNS[3]]
+    actual_y = manual_labeled_tweets[COMPULSORY_COLUMNS[2]]
 
     for index, ordered_matrix_class in enumerate(ordered_matrix_classes):
         y_predict = y_predict.replace(to_replace=ordered_matrix_class, \
@@ -404,27 +411,36 @@ def main(argv):
 
         file.write(ujson.dumps(results, indent=4))
 
+    manual_distribution = {}
     predicted_distribution = {}
+    corrected_distribution = {}
+
+    print ''
 
     # Calculates the accuracy per class.
     for matrix_class in matrix_classes.keys():
         manual_class = manual_labeled_tweets[manual_labeled_tweets[ \
-            COMPULSORY_COLUMNS[3] ].str.match(matrix_class)]
+            COMPULSORY_COLUMNS[2] ].str.match(matrix_class)]
         
         manual_class_num = len(manual_class.index)
         predicted_class_num = len(manual_labeled_tweets[manual_labeled_tweets[ \
             result_col ].str.match(matrix_class)].index)
 
         correct_class_num = len(manual_class[ \
-            manual_class[COMPULSORY_COLUMNS[3]] == manual_class[result_col] ] \
+            manual_class[COMPULSORY_COLUMNS[2]] == manual_class[result_col] ] \
             .index)
 
-        predicted_distribution[matrix_class] = manual_class_num
+        manual_distribution[matrix_class] = manual_class_num
+        predicted_distribution[matrix_class] = predicted_class_num
+        corrected_distribution[matrix_class] = correct_class_num
 
         print( '%s accuracy: %s' % \
             (matrix_class, (float(correct_class_num) / manual_class_num)))
 
-    print predicted_distribution
+    print ''
+    print 'manual distribution: %s' % manual_distribution
+    print 'predicted distribution: %s' % predicted_distribution
+    print 'correct predicted distribution %s' % corrected_distribution
 
     # Serializes prediction CSV
     df.to_csv(path_or_buf=os.path.join(dataset_result_output_path, \

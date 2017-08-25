@@ -84,7 +84,7 @@ def load_model(model_path, weights_path):
 
     model = model_from_json(model_str)
     model.load_weights(weights_path)
-    model.compile(loss='categorical_crossentropy', optimizer='adam', \
+    model.compile(loss='binary_crossentropy', optimizer='adam', \
         metrics=['accuracy', 'mse', 'mae'])
 
     return model
@@ -293,6 +293,7 @@ def main(argv):
 
         model = load_model(classifier_dict[classifiers_attr_str[1]], \
             classifier_dict[classifiers_attr_str[2]])
+        model.summary()
 
         # Dataset prediction.
         y_predict = model.predict(X_predict)
@@ -410,7 +411,11 @@ def main(argv):
 
         file.write(ujson.dumps(results, indent=4))
 
+    manual_distribution = {}
     predicted_distribution = {}
+    corrected_distribution = {}
+
+    print ''
 
     # Calculates the accuracy per class.
     for matrix_class in matrix_classes.keys():
@@ -425,12 +430,17 @@ def main(argv):
             manual_class[COMPULSORY_COLUMNS[2]] == manual_class[result_col] ] \
             .index)
 
-        predicted_distribution[matrix_class] = manual_class_num
+        manual_distribution[matrix_class] = manual_class_num
+        predicted_distribution[matrix_class] = predicted_class_num
+        corrected_distribution[matrix_class] = correct_class_num
 
         print( '%s accuracy: %s' % \
             (matrix_class, (float(correct_class_num) / manual_class_num)))
 
-    print predicted_distribution
+    print ''
+    print 'manual distribution: %s' % manual_distribution
+    print 'predicted distribution: %s' % predicted_distribution
+    print 'correct predicted distribution %s' % corrected_distribution
 
     # Serializes prediction CSV
     df.to_csv(path_or_buf=os.path.join(dataset_result_output_path, \

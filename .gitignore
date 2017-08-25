@@ -3,6 +3,8 @@ json/
 
 *.npy
 *.h5
+*.hdf5
+
 
 *.bin
 datasets/crowdflower/json/*.json
