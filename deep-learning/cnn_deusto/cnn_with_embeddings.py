@@ -133,7 +133,7 @@ def generate_model(model_size, max_phrase_length, num_categories, \
         metrics=['accuracy', 'mse', 'mae'])
     return model
 
-def generate_old_parallel_convolution(filtsz, embed, num_filters, \
+def generate_old_parallel_convolutionals(filtsz, embed, num_filters, \
     max_phrase_length, model_size):
     
     convs = []
