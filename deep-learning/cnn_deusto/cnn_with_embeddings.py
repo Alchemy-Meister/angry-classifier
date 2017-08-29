@@ -142,7 +142,7 @@ def generate_old_parallel_convolutionals(filtsz, embed, num_filters, \
         branch_ngram = Sequential()
         branch_ngram.add(Convolution2D(num_filters, fsz, model_size, \
             input_shape=(1, max_phrase_length, model_size), \
-            border_mode='valid'), activation='relu')
+            border_mode='valid', activation='relu'))
         branch_ngram.add(MaxPooling2D( \
             pool_size=(max_phrase_length - fsz + 1, 1)) )
         convs.append(branch_ngram)
