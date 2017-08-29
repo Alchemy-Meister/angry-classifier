@@ -103,17 +103,17 @@ def generate_model(model_size, max_phrase_length, num_categories, \
     embd = generate_embedding_matrix(embedding_weights, max_phrase_length, \
         trainable) (x_1)
 
-    joined = generate_old_parallel_convolutionals(FILTSZ, embd, NUM_FILTERS, \
+    joined = generate_parallel_convolutionals(FILTSZ, embd, NUM_FILTERS, \
         max_phrase_length, model_size)
 
     if batch_normalization:
         batch_norm = BatchNormalization()(joined)
         drop = Dropout(dropout)(batch_norm)
     else:
-        # drop = Dropout(dropout)(joined)
-        joined.add(Dropout(dropout))
-        drop = joined
-    dense = generate_second_old_part_after_cnns(drop, dropout, 'main', \
+        drop = Dropout(dropout)(joined)
+        # joined.add(Dropout(dropout))
+        # drop = joined
+    dense = generate_second_part_after_cnns(drop, dropout, 'main', \
         DENSES, batch_normalization, BATCH_NORMALIZATION_RELU_SOFT, \
         BINARY, 'softmax')
 
@@ -195,10 +195,10 @@ def generate_second_old_part_after_cnns(drop1, dropout, name, denses, \
 def generate_second_part_after_cnns(drop1, dropout, name, denses, \
     batch_normalization, batch_normalization_relu_soft, binary, last_function):
     
-    # if denses[0] == "linear":
-    #     dense_relu = Dense(512)(drop1)
-    # else:
-    #     dense_relu = Dense(512, activation=denses[0])(drop1)
+    if denses[0] == "linear":
+        dense_relu = Dense(512)(drop1)
+    else:
+        dense_relu = Dense(512, activation=denses[0])(drop1)
     # for dense in denses[1:]:
     #     drop = Dropout(dropout)(dense_relu)
     #     dense_relu = Dense(512, activation=dense)(drop)
