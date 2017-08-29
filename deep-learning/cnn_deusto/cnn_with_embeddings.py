@@ -110,8 +110,9 @@ def generate_model(model_size, max_phrase_length, num_categories, \
         batch_norm = BatchNormalization()(joined)
         drop = Dropout(dropout)(batch_norm)
     else:
-        drop = Dropout(dropout)(joined)
-
+        # drop = Dropout(dropout)(joined)
+        joined.add(Dropout(dropout))
+        drop = joined
     dense = generate_second_old_part_after_cnns(drop, dropout, 'main', \
         DENSES, batch_normalization, BATCH_NORMALIZATION_RELU_SOFT, \
         BINARY, 'softmax')
