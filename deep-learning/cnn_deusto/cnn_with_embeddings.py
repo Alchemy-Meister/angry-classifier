@@ -5,7 +5,8 @@ from datetime import datetime
 from keras import backend as K
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 from keras.layers import Dense, Dropout, Activation, Embedding, Flatten
-from keras.layers import Convolution1D, GlobalMaxPooling1D, merge, Input
+from keras.layers import Convolution1D, Convolution2D, GlobalMaxPooling1D, \
+    MaxPooling2D, merge, Merge, Input
 from keras.layers.normalization import BatchNormalization
 from keras.models import Sequential, Model
 from keras.models import model_from_json
@@ -102,7 +103,7 @@ def generate_model(model_size, max_phrase_length, num_categories, \
     embd = generate_embedding_matrix(embedding_weights, max_phrase_length, \
         trainable) (x_1)
 
-    joined = generate_parallel_convolutionals(FILTSZ, embd, NUM_FILTERS, \
+    joined = generate_old_parallel_convolutionals(FILTSZ, embd, NUM_FILTERS, \
         max_phrase_length, model_size)
 
     if batch_normalization:
@@ -111,7 +112,7 @@ def generate_model(model_size, max_phrase_length, num_categories, \
     else:
         drop = Dropout(dropout)(joined)
 
-    dense = generate_second_part_after_cnns(drop, dropout, 'main', \
+    dense = generate_second_old_part_after_cnns(drop, dropout, 'main', \
         DENSES, batch_normalization, BATCH_NORMALIZATION_RELU_SOFT, \
         BINARY, 'softmax')
 
@@ -125,9 +126,6 @@ def generate_model(model_size, max_phrase_length, num_categories, \
     # Add batch normalization layer
     # merged.add(BatchNormalization())
 
-    #merged.compile(loss='binary_crossentropy', optimizer='adam', \
-    #    metrics=['accuracy', 'mse', 'mae'])
-
     print "Len the inputs " + str(len(input_weights))
     print "Len de outputs es " + str(len(output_weights))
     model = Model(input=input_weights, output=output_weights)
@@ -135,8 +133,29 @@ def generate_model(model_size, max_phrase_length, num_categories, \
         metrics=['accuracy', 'mse', 'mae'])
     return model
 
+def generate_old_parallel_convolution(filtsz, embed, num_filters, \
+    max_phrase_length, model_size):
+    
+    convs = []
+    joined = Sequential()
+    for i, fsz in enumerate(filtsz):
+        branch_ngram = Sequential()
+        branch_ngram.add(Convolution2D(num_filters, fsz, model_size, \
+            input_shape=(1, max_phrase_length, model_size), \
+            border_mode='valid'), activation='relu')
+        branch_ngram.add(MaxPooling2D( \
+            pool_size=(max_phrase_length - fsz + 1, 1)) )
+        convs.append(branch_ngram)
+    
+    joined.add(Merge(convs, mode='concat', concat_axis=2))
+    joined.add(Flatten())
+    
+    return joined
+
+
 def generate_parallel_convolutionals(filtsz, embed, num_filters, \
     max_phrase_length, model_size):
+    
     convs = []
     joined = ""
     if len (filtsz) > 1:
@@ -152,6 +171,25 @@ def generate_parallel_convolutionals(filtsz, embed, num_filters, \
         joined = GlobalMaxPooling1D()(conv)
 
     return joined
+
+def generate_second_old_part_after_cnns(drop1, dropout, name, denses, \
+    batch_normalization, batch_normalization_relu_soft, binary, last_function):
+    
+    if denses[0] == "linear":
+        dense_relu = Dense(512)(drop1)
+    else:
+        dense_relu = Dense(512, activation=denses[0])(drop1)
+    # for dense in denses[1:]:
+    #     drop = Dropout(dropout)(dense_relu)
+    #     dense_relu = Dense(512, activation=dense)(drop)
+    # if batch_normalization_relu_soft:
+    #     dense_relu = BatchNormalization()(dense_relu)
+    # print "Is binary?" + str(binary)
+    if binary:
+        softmax_len = 2
+    # print "Last activation is " + last_function
+    dense = Dense(softmax_len, activation=last_function, name=name)(drop1)
+    return dense
 
 def generate_second_part_after_cnns(drop1, dropout, name, denses, \
     batch_normalization, batch_normalization_relu_soft, binary, last_function):
