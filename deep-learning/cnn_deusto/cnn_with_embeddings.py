@@ -179,7 +179,7 @@ def generate_second_old_part_after_cnns(drop1, dropout, name, denses, \
     if denses[0] == "linear":
         dense_relu = Dense(512)(drop1)
     else:
-        dense_relu = Dense(512, activation=denses[0])(drop1)
+        drop1.add(Dense(512, activation=denses[0]))
     # for dense in denses[1:]:
     #     drop = Dropout(dropout)(dense_relu)
     #     dense_relu = Dense(512, activation=dense)(drop)
@@ -189,8 +189,8 @@ def generate_second_old_part_after_cnns(drop1, dropout, name, denses, \
     if binary:
         softmax_len = 2
     # print "Last activation is " + last_function
-    dense = Dense(softmax_len, activation=last_function, name=name)(drop1)
-    return dense
+    drop1.add(Dense(softmax_len, activation=last_function, name=name))
+    return drop1
 
 def generate_second_part_after_cnns(drop1, dropout, name, denses, \
     batch_normalization, batch_normalization_relu_soft, binary, last_function):
