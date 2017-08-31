@@ -67,10 +67,12 @@ def main(argv):
 			for index, tweet in enumerate(input1):
 
 				if tweet['label'] != input2[index]['label'] \
-					!= input3.iloc[index]['label']:
-					
+					!= input3.iloc[index]['label'] and \
+                                        input2[index]['id'] != \
+                                        input3.iloc[index]['tweet_id']:
+
 					print tweet['label']
-					print input2[index]['index']
+					print input2[index]['label']
 					print input3.iloc[index]['label']
 					print 'Error: labels do not match, you are retarded.'
 					sys.exit(2)

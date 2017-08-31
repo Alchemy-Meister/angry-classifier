@@ -54,7 +54,6 @@ COMPULSORY_COLUMNS = list(CSV_COLUMNS)
 del COMPULSORY_COLUMNS[2]
 
 LOAD_COLUMNS = list(COMPULSORY_COLUMNS)
-del LOAD_COLUMNS[0]
 
 def check_valid_dir(dir_name):
     if not os.path.isabs(dir_name):
@@ -69,27 +68,6 @@ def check_valid_dir(dir_name):
             sys.exit(2)
 
     return dir_name
-
-def process_sample(model, sample, list_index, max_word_per_sentence, spell):
-    num_words = len(sample[list_index]['words'])
-
-    for index in xrange(max_word_per_sentence):
-
-        if index < num_words:
-
-            word = sample[list_index]['words'][index]
-
-            vector = word2vector(model, word, spell)
-
-            sample[list_index]['word2vec'].append(vector)
-
-        else:
-            # Adds zero array padding until filling max_word_per_sentence.
-            sample[list_index]['word2vec'].append( \
-                np.zeros(NUM_MODEL_FEATURES).tolist())
-
-    # Remove word list from the dict
-    sample[list_index].pop('words', None)
 
 def serialize_sample(sample_output_path, sample, indent):
      with codecs.open(sample_output_path, 'w', \
@@ -337,10 +315,11 @@ def main(argv):
         for tweet in tqdm(df.itertuples(), desc='Tweet preprocessing', \
             total=df_length):
 
-            label = tweet[1]
+            tweet_id = tweet[1]
+            label = tweet[2]
 
             # Clean text of new lines.
-            preprocessed_tweet = tweet[2].replace('\n', ' ');
+            preprocessed_tweet = tweet[3].replace('\n', ' ');
 
             # Unescape possible HTML entities.
             preprocessed_tweet = BeautifulSoup(preprocessed_tweet, \
@@ -409,16 +388,19 @@ def main(argv):
                 # Split data into validation file.
                 if not validation or preprocess_index <= test_start:
                     validation_or_test_output.append({'label': label, \
-                        'words': tweet_words});
+                        'words': tweet_words, 'id': tweet_id});
                 else:
                     # Split data into test validation file.
-                    test_output.append({'label': label, 'words': tweet_words});
+                    test_output.append({'label': label, 'words': tweet_words, \
+                        'id': tweet_id});
             elif fake_divide and preprocess_index < train_length:
                 # Split data into train file.
-                output.append({'label': label, 'words': tweet_words});
+                output.append({'label': label, 'words': tweet_words, \
+                    'id': tweet_id});
             elif not fake_divide:
                 # Adds all the data to a single file, without splitting.
-                output.append({'label': label, 'words': tweet_words});
+                output.append({'label': label, 'words': tweet_words, \
+                    'id': tweet_id});
 
             # Update largest sentence's word number.
             if max_word_per_sentence < word_count:
@@ -482,9 +464,10 @@ def main(argv):
     # Release memory.
     del model
 
+    # Replace original tweet words with their representative IDs.
     if not preprocess_only:
 
-        irony_pad = 0
+        index_padding = 0
 
         for index in xrange(len(outputs)):
             
@@ -495,7 +478,10 @@ def main(argv):
                 desc=task_description, total=len(outputs[index])):
                 
                 outputs[index][train_index]['words'] = sequences_phrases[ \
-                    irony_pad + train_index]
+                    index_padding + train_index]
+
+                print str(index_padding + train_index) + ' out of ' \
+                    + str(len(sequences_phrases)) 
 
             # Optional if statement to hide console progress bar if not needed.
             if fake_divide:
@@ -506,8 +492,11 @@ def main(argv):
                     total=len(validation_or_test_outputs[index])):
 
                     validation_or_test_outputs[index][val_test_index]['words'] \
-                        = sequences_phrases[irony_pad + train_index \
+                        = sequences_phrases[index_padding + train_index \
                         + val_test_index]
+
+                    print str(index_padding + train_index + val_test_index) \
+                        + ' out of ' + str(len(sequences_phrases))
 
                 if validation:
                     val_test_index += 1
@@ -516,10 +505,10 @@ def main(argv):
                         total=len(test_outputs[index])):
 
                         test_outputs[index][test_index]['words'] = \
-                            sequences_phrases[irony_pad + train_index \
+                            sequences_phrases[index_padding + train_index \
                             + val_test_index + test_index]
 
-            irony_pad = train_index + val_test_index + test_index + 1
+            index_padding += train_index + val_test_index + test_index + 1
 
     fake_divide = divide
 
