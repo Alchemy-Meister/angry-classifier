@@ -85,7 +85,7 @@ def process_sample(model, sample, list_index, max_word_per_sentence, spell):
                 np.zeros(NUM_MODEL_FEATURES).tolist())
 
     # Remove word list from the dict
-    sample[list_index].pop('words', None)
+    # sample[list_index].pop('words', None)
 
 def serialize_sample(sample_output_path, sample, indent):
      with codecs.open(sample_output_path, 'w', \

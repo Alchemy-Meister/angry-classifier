@@ -1,6 +1,7 @@
 # /usr/bin/env
 # -*- coding: utf-8 -*-
 
+import gensim
 import sys
 import ujson
 import os
@@ -44,6 +45,8 @@ def main(argv):
         weights = None
         word_index = None
 
+        model_rel_path = '/../word2vec/model/GoogleNews-vectors-negative300.bin'
+
         input1 = check_valid_path(argv[0], 'sample 1')
         input2 = check_valid_path(argv[1], 'sample 2')
         input3 = check_valid_path(argv[2], 'sample 3')
@@ -76,13 +79,11 @@ def main(argv):
             print 'Error: sample have different length, you are retarded'
             sys.exit(2)
         else:
+
+            model = gensim.models.Word2Vec.load_word2vec_format( \
+            SCRIPT_DIR + model_rel_path, binary=True)
+
             for index, tweet in enumerate(input1):
-
-                print len(input2[index]['words'])
-                print len(tweet['word2vec'])
-                print
-
-                sys.exit(2)
 
                 if tweet['label'] != input2[index]['label'] \
                     != input3.iloc[index]['label'] or \
@@ -93,6 +94,24 @@ def main(argv):
                     print input2[index]['label']
                     print input3.iloc[index]['label']
                     print 'Error: labels do not match, you are retarded.'
+                    sys.exit(2)
+
+                for word_id in input2[index]['words']:
+                    word = word_index.keys()[word_index.values().index(word_id)]
+
+                    print word
+
+                    print tweet['words']
+
+                    try:
+                        word_weight = model['word']
+                        print word_weight
+                        print tweet['word2vec'][index]
+                    except KeyError:
+                        print 'WTF'
+                    
+                    print
+
                     sys.exit(2)
 
 if __name__ == '__main__':
