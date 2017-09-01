@@ -312,13 +312,13 @@ def main(argv):
         preprocessed_tweet = preprocessed_tweet.lower()
 
         # Remove URLs and mentions with representative key code.
-        preprocessed_tweet = re.sub(twitter_url_regex, 'URL', \
+        preprocessed_tweet = re.sub(twitter_url_regex, ' URL', \
             preprocessed_tweet)
         preprocessed_tweet = re.sub(twitter_mention_regex, ' MENTION', \
             preprocessed_tweet)
 
         if delete_hashtags:
-            preprocessed_tweet = re.sub(twitter_hashtag_regex, 'TAG', \
+            preprocessed_tweet = re.sub(twitter_hashtag_regex, ' TAG', \
                 preprocessed_tweet)
 
         # Search for emoticons.

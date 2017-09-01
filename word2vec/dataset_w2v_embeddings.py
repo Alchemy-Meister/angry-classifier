@@ -78,21 +78,15 @@ def serialize_sample(sample_output_path, sample, indent):
         else:
             file.write(ujson.dumps(sample))
 
-def word2vector(model, word, spell_check):
-    try:
-        vector = model[word]
-    except KeyError:
-        if spell_check and not word.isdigit() and word not in CLEAN_WORD_LIST:
-    
-            from string import printable
+def correct_words(words, model):
+    for index, word in enumerate(words):
+        try:
+            model[word]
+        except KeyError:
+            if not word.isdigit() and word not in CLEAN_WORD_LIST:
+                corrected_word = spell.correction(word)
+                words[index] = corrected_word
 
-            corrected_word = spell.correction(word)
-            if word != corrected_word:
-                try:
-                    vector = model[corrected_word]
-                except KeyError:
-                    pass
-    return vector
 
 def main(argv):
 
@@ -329,13 +323,13 @@ def main(argv):
             preprocessed_tweet = preprocessed_tweet.lower()
 
             # Remove URLs and mentions with representative key code.
-            preprocessed_tweet = re.sub(twitter_url_regex, 'URL', \
+            preprocessed_tweet = re.sub(twitter_url_regex, ' URL', \
                 preprocessed_tweet)
             preprocessed_tweet = re.sub(twitter_mention_regex, ' MENTION', \
                 preprocessed_tweet)
 
             if delete_hashtags:
-                preprocessed_tweet = re.sub(twitter_hashtag_regex, 'TAG', \
+                preprocessed_tweet = re.sub(twitter_hashtag_regex, ' TAG', \
                     preprocessed_tweet)
 
             # Search for emoticons.
@@ -379,6 +373,9 @@ def main(argv):
             # Removes stopwords.
             tweet_words = [word for word in tweet_words \
                 if word and word not in stop_words]
+
+            if spell_check:
+                correct_words(tweet_words, model)
 
             word_count = len(tweet_words)
 
@@ -445,14 +442,14 @@ def main(argv):
     sentences = pad_sequences(sequences_phrases, maxlen=max_word_per_sentence, \
         padding='post')
     word_index = word_id_tokenizer.word_index
-
     weights = np.zeros((len(word_index) + 1, NUM_MODEL_FEATURES))
     unknown_words = {}
+
     for word, i in tqdm(word_index.items(), desc='Embeddings\' weights ' \
         + 'processing', total=len(word_index.items())):
 
         try:
-            embedding_vector = word2vector(model, word, spell_check)
+            embedding_vector = model[word]
             weights[i] = embedding_vector
         except Exception as e:
             if word in unknown_words:
@@ -480,9 +477,6 @@ def main(argv):
                 outputs[index][train_index]['words'] = sequences_phrases[ \
                     index_padding + train_index]
 
-                print str(index_padding + train_index) + ' out of ' \
-                    + str(len(sequences_phrases)) 
-
             # Optional if statement to hide console progress bar if not needed.
             if fake_divide:
                 train_index += 1
@@ -494,9 +488,6 @@ def main(argv):
                     validation_or_test_outputs[index][val_test_index]['words'] \
                         = sequences_phrases[index_padding + train_index \
                         + val_test_index]
-
-                    print str(index_padding + train_index + val_test_index) \
-                        + ' out of ' + str(len(sequences_phrases))
 
                 if validation:
                     val_test_index += 1
@@ -558,6 +549,9 @@ def main(argv):
             encoding='utf-8') as dout:
 
             dout.write(ujson.dumps(distribution, indent=4))
+
+    serialize_sample(os.path.join(dataset_path, 'embedding_word_index.json'), \
+        word_index, False)
 
     # Release memory.
     del distributions
