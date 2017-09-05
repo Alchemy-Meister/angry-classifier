@@ -357,7 +357,7 @@ def main(argv):
     merged = None
     dataset_name = None
 
-    trainable = False
+    trainable = True
 
     try:
         opts, args = getopt.getopt(argv,'h',['embedding_weights=', 'train=', \
