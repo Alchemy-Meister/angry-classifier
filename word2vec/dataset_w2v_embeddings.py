@@ -394,6 +394,7 @@ def main(argv):
                 # Split data into train file.
                 output.append({'label': label, 'words': tweet_words, \
                     'id': tweet_id});
+
             elif not fake_divide:
                 # Adds all the data to a single file, without splitting.
                 output.append({'label': label, 'words': tweet_words, \
@@ -473,7 +474,7 @@ def main(argv):
 
             for train_index in trange(len(outputs[index]), \
                 desc=task_description, total=len(outputs[index])):
-                
+
                 outputs[index][train_index]['words'] = sequences_phrases[ \
                     index_padding + train_index]
 

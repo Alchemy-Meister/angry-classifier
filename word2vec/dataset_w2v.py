@@ -50,7 +50,7 @@ COMPULSORY_COLUMNS = list(CSV_COLUMNS)
 del COMPULSORY_COLUMNS[2]
 
 LOAD_COLUMNS = list(COMPULSORY_COLUMNS)
-del LOAD_COLUMNS[0]
+# del LOAD_COLUMNS[0]
 
 def check_valid_dir(dir_name):
     if not os.path.isabs(dir_name):
@@ -299,10 +299,11 @@ def main(argv):
     for tweet in tqdm(df.itertuples(), desc='Tweet preprocessing', \
         total=df_length):
 
-        label = tweet[1]
+        tweet_id = tweet[1]
+        label = tweet[2]
 
         # Clean text of new lines.
-        preprocessed_tweet = tweet[2].replace('\n', ' ');
+        preprocessed_tweet = tweet[3].replace('\n', ' ');
 
         # Unescape possible HTML entities.
         preprocessed_tweet = BeautifulSoup(preprocessed_tweet, 'html.parser') \
@@ -369,19 +370,21 @@ def main(argv):
             # Split data into validation file.
             if not validation or preprocess_index <= test_start:
                 validation_or_test_output.append({'label': label, \
-                    'words': tweet_words, 'word2vec': []});
+                    'words': tweet_words, 'word2vec': [], \
+                    'id': tweet_id});
             else:
                 # Split data into test validation file.
                 test_output.append({'label': label, \
-                    'words': tweet_words, 'word2vec': []});
+                    'words': tweet_words, 'word2vec': [], \
+                    'id': tweet_id});
         elif divide and preprocess_index < train_length:
             # Split data into train file.
             output.append({'label': label, 'words': tweet_words, \
-                'word2vec': []});
+                'word2vec': [], 'id': tweet_id});
         elif not divide:
             # Adds all the data to a single file, without splitting.
             output.append({'label': label, 'words': tweet_words, \
-                'word2vec': []});
+                'word2vec': [], 'id': tweet_id});
 
         # Update largest sentence's word number.
         if max_word_per_sentence < word_count:

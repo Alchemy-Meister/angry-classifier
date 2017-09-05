@@ -1,6 +1,7 @@
 # /usr/bin/env
 # -*- coding: utf-8 -*-
 
+import codecs
 import gensim
 import sys
 import ujson
@@ -37,6 +38,12 @@ def check_valid_dir(dir_name):
 
     return dir_name
 
+def read_file(path):
+    f = codecs.open(path, 'r', encoding='utf-8')
+    string_file = f.read()
+    f.close()
+    return string_file
+
 def main(argv):
     if(len(argv) != 3 and len(argv) != 5):
         print 'Error: 3 or 5 inputs are required.'
@@ -60,8 +67,8 @@ def main(argv):
         print weights
         print word_index
 
-        input1 = ujson.load(open(input1, 'r'))
-        input2 = ujson.load(open(input2, 'r'))
+        input1 = ujson.loads(read_file(input1), precise_float=True)
+        input2 = ujson.loads(read_file(input2))
         input3 = df = pd.read_csv(input3, header=0, \
         dtype={'tweet_id': np.int64})
         if weights != None:
@@ -69,7 +76,9 @@ def main(argv):
         if word_index != None:
             word_index = ujson.load(open(word_index, 'r'))
 
-        if len(input1) != len(input2) != len(input3.index):
+        if len(input1) != len(input2) or len(input1) != len(input3.index) \
+            or len(input2) != len(input3.index):
+            
             print len(input1)
             print len(input2)
             print len(input3.index)
@@ -86,33 +95,56 @@ def main(argv):
             for index, tweet in enumerate(input1):
 
                 if tweet['label'] != input2[index]['label'] \
-                    != input3.iloc[index]['label'] or \
-                                        input2[index]['id'] != \
-                                        input3.iloc[index]['tweet_id']:
+                    != input3.iloc[index]['label'] \
+                    or input1[index]['id'] != input2[index]['id'] \
+                    or input1[index]['id'] != input3.iloc[index]['tweet_id'] \
+                    or input2[index]['id'] != input3.iloc[index]['tweet_id'] \
+                    or len(tweet['words']) != len(input2[index]['words']):
 
                     print tweet['label']
                     print input2[index]['label']
                     print input3.iloc[index]['label']
-                    print 'Error: labels do not match, you are retarded.'
+                    print 'Error: labels or IDs do not match, you are retarded.'
                     sys.exit(2)
 
-                for word_id in input2[index]['words']:
+                for tweet_ndx, word_id in enumerate(input2[index]['words']):
+
                     word = word_index.keys()[word_index.values().index(word_id)]
 
-                    print word
+                    spell_corrected = False
 
-                    print tweet['words']
+                    if word != input1[index]['words'][tweet_ndx]:
+                        spell_corrected = True
 
                     try:
-                        word_weight = model['word']
-                        print word_weight
-                        print tweet['word2vec'][index]
-                    except KeyError:
-                        print 'WTF'
-                    
-                    print
+                        word_weight = model[word]
+                        if not np.allclose(word_weight, \
+                            np.array(tweet['word2vec'][tweet_ndx])):
 
-                    sys.exit(2)
+                            print 'Error, word2vec not equal, ' \
+                                + 'you are retarded.'
+
+                            if spell_corrected:
+                                print 'Alert: different words, check spelling.'
+                                print word
+                                print input1[index]['words'][tweet_ndx]
+                                print input1[index]['words']
+
+                            sys.exit(2)
+                    except KeyError:
+                        if not np.allclose(np.zeros( \
+                            len(tweet['word2vec'][tweet_ndx])),  \
+                            np.array(tweet['word2vec'][tweet_ndx])):
+
+                            print 'Error, unknown word is not zero, ' \
+                                + 'you are retarded.'
+
+                            if spell_corrected:
+                                print 'Alert: different words, check spelling.'
+                                print word
+                                print input1[index]['words'][tweet_ndx]
+                                print input1[index]['words']
+                            sys.exit(2)
 
 if __name__ == '__main__':
     main(sys.argv[1:])
