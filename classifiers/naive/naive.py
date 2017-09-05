@@ -18,7 +18,7 @@ CWD = os.getcwd()
 
 import imp
 drawing_utils = imp.load_source('drawing_utils', os.path.join(SCRIPT_DIR, \
-    '../../deep-learning/drawing_utils.py'))
+    '../../deep-learning/drawing/drawing_utils.py'))
 
 from drawing_utils import EpochDrawer, ConfusionMatrixDrawer
 
