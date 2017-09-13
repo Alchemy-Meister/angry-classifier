@@ -30,6 +30,7 @@ from drawing.drawing_utils import EpochDrawer, ConfusionMatrixDrawer
 
 USAGE_STRING = 'Usage: repressed-anger.py [-h] [--help] ' \
     + '[--dataset=path_to_original_dataset]' \
+    + '--word2vec_file=path_to_processed_dataset_json' \
     + '[--anger_dir=path_to_anger_dir] ' \
     + '[--anger_model_weights=anger_weights_filename] ' \
     + '[--anger_distribution=anger_distribution_path]' \
@@ -63,9 +64,16 @@ def prepare_samples(piece_path, max_phrase_length, model_length, num_instances):
         program = program[:num_instances]
         
         for phrase in program:
-            X.append(np.array(phrase['words']))
+            X.append(np.array(phrase['word2vec']))
     X = np.array(X)
-    X = pad_sequences(X, maxlen=max_phrase_length, padding='post')
+    #X = pad_sequences(X, maxlen=max_phrase_length, padding='post')
+
+    if K.image_dim_ordering() == 'th':
+        X = X.reshape(X.shape[0], 1, max_phrase_length, model_length)
+        #input_shape = (1, img_rows, img_cols)
+    else:
+        X = X.reshape(X.shape[0], max_phrase_length, model_length, 1)
+        #input_shape = (img_rows, img_cols, 1)
     return X
 
 def one_hot_encoder(total_classes):
@@ -122,6 +130,8 @@ def main(argv):
     dataset_result_output_path = None
     results_output_path = None
 
+    explicit_word2vec = False
+
     result_col = 'classification'
     classifiers_name_str = ['anger', 'irony']
     classifiers_attr_str = ['dir', 'model', 'weights', 'distribution']
@@ -148,7 +158,8 @@ def main(argv):
     try:
         opts, args = getopt.getopt(argv,'h',['dataset=', 'anger_dir=', \
             'anger_weights_filename=', 'anger_distribution=','irony_dir=', \
-            'irony_weights_filename=', 'irony_distribution=', 'help'])
+            'irony_weights_filename=', 'irony_distribution=', 'help', \
+            'word2vec_file='])
     except getopt.GetoptError:
         print 'Error: Unknown parameter. %s' % USAGE_STRING
         sys.exit(2)
@@ -163,14 +174,15 @@ def main(argv):
             
             dataset_name = dataset_split_path[1].split('.csv')[0]
 
-            word2vec_dataset_path = check_valid_path(dataset_split_path[0] \
-                + '/json/' + dataset_name + '.json', \
-                'word2vec dataset')
+            if not explicit_word2vec:
 
-            # Loads prediction dataset distribution file.
-            predic_distribution = ujson.load( open(check_valid_path( \
-                word2vec_dataset_path.split('.json')[0] \
-                + '_distribution.json', 'predict distribution'), 'r') )
+                word2vec_dataset_path = check_valid_path(dataset_split_path[0] \
+                    + '/json/' + dataset_name + '.json', 'word2vec dataset')
+
+                # Loads prediction dataset distribution file.
+                predic_distribution = ujson.load( open(check_valid_path( \
+                    word2vec_dataset_path.split('test.json')[0] \
+                    + '_distribution.json', 'predict distribution'), 'r') )
 
             dataset_result_output_path = os.path.join(SCRIPT_DIR, \
                 dataset_name)
@@ -180,7 +192,14 @@ def main(argv):
                 'results')
 
             check_valid_dir(results_output_path)
+        elif o == '--word2vec_file':
+            explicit_word2vec = True
 
+            word2vec_dataset_path = check_valid_path(a, 'word2vec dataset')
+            # Loads prediction dataset distribution file.
+            predic_distribution = ujson.load( open(check_valid_path( \
+                word2vec_dataset_path.split('.json')[0] \
+                + '_distribution.json', 'predict distribution'), 'r') )
         elif o == '--anger_dir':
             class_dir = check_valid_dir(a)
             classifiers[classifiers_name_str[0]][classifiers_attr_str[0]] \
@@ -296,7 +315,7 @@ def main(argv):
         model.summary()
 
         # Dataset prediction.
-        y_predict = model.predict(X_predict)
+        y_predict = model.predict([X_predict, X_predict, X_predict])
         # Calculates prediction's one hot encoder
         y_predict = probas_to_classes(y_predict)
 

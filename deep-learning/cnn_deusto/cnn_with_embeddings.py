@@ -22,14 +22,15 @@ import ujson, json, base64
 import numpy as np
 
 FILTSZ = [3, 4, 5]
-NUM_FILTERS = 200
+NUM_FILTERS = 512
 BATCH_SIZE = 50
 NB_EPOCH = 1000
 EVAL_PERIOD = 12
 PATIENCE = 20
 STOP_CONDITION = 'val_loss'
 DROPOUT = 0.5
-BATCH_NORMALIZATION = False
+DENSA_DROPOUT = 0.4
+BATCH_NORMALIZATION = True
 BINARY = True
 BATCH_NORMALIZATION_RELU_SOFT = False
 DENSES = ['relu']
@@ -49,7 +50,8 @@ USAGE_STRING = 'Usage: cnn.py [-h] [--help] --target=[train, test, all] ' \
     + '--validation=path_to_validation_word2vect ' \
     + '--test=path_to_test_word2vec' \
     + '[--distribution=path_to_distribution_file] ' \
-    + '[--load_model=path_to_model] [--load_weights=path_to_weights]'
+    + '[--load_model=path_to_model] [--load_weights=path_to_weights]' \
+    + '[--name=experiment_name]'
 
 def json_numpy_obj_hook(dct):
     """Decodes a previously encoded numpy ndarray with proper shape and dtype.
@@ -104,17 +106,12 @@ def generate_model(model_size, max_phrase_length, num_categories, \
         trainable) (x_1)
 
     joined = generate_parallel_convolutionals(FILTSZ, embd, NUM_FILTERS, \
-        max_phrase_length, model_size)
+        max_phrase_length, model_size, batch_normalization)
 
-    if batch_normalization:
-        batch_norm = BatchNormalization()(joined)
-        drop = Dropout(dropout)(batch_norm)
-    else:
-        drop = Dropout(dropout)(joined)
-        # joined.add(Dropout(dropout))
-        # drop = joined
+    drop = Dropout(dropout)(joined)
+        
     dense = generate_second_part_after_cnns(drop, dropout, 'main', \
-        DENSES, batch_normalization, BATCH_NORMALIZATION_RELU_SOFT, \
+        DENSES, BATCH_NORMALIZATION_RELU_SOFT, \
         BINARY, 'softmax')
 
     # Add one or two Densa ReLu.
@@ -134,35 +131,21 @@ def generate_model(model_size, max_phrase_length, num_categories, \
         metrics=['accuracy', 'mse', 'mae'])
     return model
 
-def generate_old_parallel_convolutionals(filtsz, embed, num_filters, \
-    max_phrase_length, model_size):
-    
-    convs = []
-    joined = Sequential()
-    for i, fsz in enumerate(filtsz):
-        branch_ngram = Sequential()
-        branch_ngram.add(Convolution2D(num_filters, fsz, model_size, \
-            input_shape=(1, max_phrase_length, model_size), \
-            border_mode='valid', activation='relu'))
-        branch_ngram.add(MaxPooling2D( \
-            pool_size=(max_phrase_length - fsz + 1, 1)) )
-        convs.append(branch_ngram)
-    
-    joined.add(Merge(convs, mode='concat', concat_axis=2))
-    joined.add(Flatten())
-    
-    return joined
-
-
 def generate_parallel_convolutionals(filtsz, embed, num_filters, \
-    max_phrase_length, model_size):
+    max_phrase_length, model_size, batch_normalization):
     
     convs = []
     joined = ""
     if len (filtsz) > 1:
         for i, fsz in enumerate(filtsz):
-            conv = Convolution1D(num_filters, fsz, activation='relu', \
+            conv = Convolution1D(num_filters, fsz, \
                 input_length=max_phrase_length)(embed)
+
+            if batch_normalization:
+                conv = BatchNormalization()(conv)
+
+            conv = Activation('relu')(conv)
+
             gmp = GlobalMaxPooling1D()(conv)
             convs.append(gmp)
         joined = merge(convs, mode='concat')
@@ -173,42 +156,28 @@ def generate_parallel_convolutionals(filtsz, embed, num_filters, \
 
     return joined
 
-def generate_second_old_part_after_cnns(drop1, dropout, name, denses, \
-    batch_normalization, batch_normalization_relu_soft, binary, last_function):
-    
-    if denses[0] == "linear":
-        dense_relu = Dense(512)(drop1)
-    else:
-        drop1.add(Dense(512, activation=denses[0]))
-    # for dense in denses[1:]:
-    #     drop = Dropout(dropout)(dense_relu)
-    #     dense_relu = Dense(512, activation=dense)(drop)
-    # if batch_normalization_relu_soft:
-    #     dense_relu = BatchNormalization()(dense_relu)
-    # print "Is binary?" + str(binary)
-    if binary:
-        softmax_len = 2
-    # print "Last activation is " + last_function
-    drop1.add(Dense(softmax_len, activation=last_function, name=name))
-    return drop1
-
 def generate_second_part_after_cnns(drop1, dropout, name, denses, \
-    batch_normalization, batch_normalization_relu_soft, binary, last_function):
+    batch_normalization_relu_soft, binary, last_function):
     
     if denses[0] == "linear":
         dense_relu = Dense(512)(drop1)
     else:
         dense_relu = Dense(512, activation=denses[0])(drop1)
-    # for dense in denses[1:]:
-    #     drop = Dropout(dropout)(dense_relu)
-    #     dense_relu = Dense(512, activation=dense)(drop)
-    # if batch_normalization_relu_soft:
-    #     dense_relu = BatchNormalization()(dense_relu)
+        dense_relu = Dropout(DENSA_DROPOUT)(dense_relu)
+        # Add a second dense relu
+        dense_relu = Dense(512, activation=denses[0])(dense_relu)
+        dense_relu = Dropout(DENSA_DROPOUT)(dense_relu)
+
+    if batch_normalization_relu_soft:
+        if dense_relu != None:
+            dense_relu = BatchNormalization()(dense_relu)
+        else:
+            dense_relu = BatchNormalization()(drop1)
     # print "Is binary?" + str(binary)
     if binary:
         softmax_len = 2
     # print "Last activation is " + last_function
-    dense = Dense(softmax_len, activation=last_function, name=name)(drop1)
+    dense = Dense(softmax_len, activation=last_function, name=name)(dense_relu)
     return dense
 
 def save_model(model, model_output_path, model_weights_output_path, model_size):
@@ -275,8 +244,8 @@ def train(train_path, validation_path, model, labels, max_phrase_length, \
     sys.stdout.flush()
 
     model.fit(X_train, y_train, batch_size=BATCH_SIZE, nb_epoch=NB_EPOCH, \
-        validation_data=(X_validation, y_validation), callbacks=[checkpoint, \
-        early_stopping])
+        validation_data=(X_validation, y_validation), \
+        callbacks=[checkpoint, early_stopping])
 
     print 'Saving model...'
     sys.stdout.flush()
@@ -356,13 +325,14 @@ def main(argv):
     target = TARGETS[2]
     merged = None
     dataset_name = None
+    experiment_name = None
 
     trainable = True
 
     try:
         opts, args = getopt.getopt(argv,'h',['embedding_weights=', 'train=', \
             'validation=','test=', 'load_model=', 'load_weights=', \
-            'distribution=', 'target=', 'help'])
+            'distribution=', 'target=', 'name=', 'help'])
     except getopt.GetoptError:
         print 'Error: Unknown parameter. %s' % USAGE_STRING
         sys.exit(2)
@@ -397,6 +367,13 @@ def main(argv):
                 print 'Error: Unknown target, specified a valid one from: %s' \
                     % str(TARGETS).strip('()')
                 sys.exit(2)
+        elif o == '--name':
+            experiment_name = a
+
+    if experiment_name == None:
+        print 'Experiment name is not initialized, ' \
+            + 'use it to improve organization.'
+        experiment_name = ''
 
     if target == TARGETS[0] or target == TARGETS[2]:
         if train_path == None or validation_path == None or embedding_weights \
@@ -408,14 +385,15 @@ def main(argv):
         else:
             dataset_name = train_path.rsplit('/', 1)[1].split('_train.json')[0]
             dataset_result_output_path = os.path.join(SCRIPT_DIR, \
-                dataset_name)
+                '../' + dataset_name)
             check_valid_dir(dataset_result_output_path)
             
             model_output_path = os.path.join(dataset_result_output_path, \
-                'model')
+                'model/backup_deusto/embeddings/' + experiment_name)
             check_valid_dir(model_output_path)
             model_weights_output_path = os.path.join( \
-                dataset_result_output_path, 'model_weights' )
+                dataset_result_output_path, 'model_weights' \
+                + '/backup_deusto/embeddings/' + experiment_name)
             check_valid_dir(model_weights_output_path)
 
             embedding_weights = np.load(embedding_weights)
@@ -437,7 +415,8 @@ def main(argv):
              + 'execute the test. %s' % USAGE_STRING
             sys.exit(2)
 
-    results_output_path = os.path.join(dataset_result_output_path, 'results')
+    results_output_path = os.path.join(dataset_result_output_path, 'results' \
+        + '/deusto/embeddings/' + experiment_name)
     check_valid_dir(results_output_path)
 
     if distribution_path is None:

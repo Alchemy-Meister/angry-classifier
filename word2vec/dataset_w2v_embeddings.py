@@ -45,7 +45,8 @@ USAGE_STRING = 'Usage: dataset_w2v_embeddings_ids.py ' \
             + '[--max_phrase_length=] [--twitter_model] [--delete-hashtags] ' \
             + '[--help] --anger_dataset=path_to_dataset ' \
             + '--irony_dataset=path_to_dataset' \
-            + '--repressed_dataset=path_to_dataset'
+            + '--repressed_dataset=path_to_dataset' \
+            + '--serialize_csv'
 
 CSV_COLUMNS = ['tweet_id', 'label', 'author', 'content']
 
@@ -91,7 +92,6 @@ def correct_words(words, model):
 def main(argv):
 
     divide = False
-    fake_divide = divide
     indent = False
     validation = False
     delete_hashtags = False
@@ -112,6 +112,7 @@ def main(argv):
     anger_dataset = None
     irony_dataset = None
     repressed_dataset = None
+    serialize_csv = False
 
     dfs = [None, None, None]
 
@@ -120,7 +121,7 @@ def main(argv):
             'validation', 'size=', 'split_ratio=', 'spell_check', 'help', \
             'max_phrase_length=', 'delete-hashtags', 'twitter_model',\
             'preprocess_only', 'anger_dataset=', 'irony_dataset=', \
-            'repressed_dataset='])
+            'repressed_dataset=', 'serialize_csv'])
     except getopt.GetoptError:
         print 'ERROR: Unknown parameter. %s' % USAGE_STRING
         sys.exit(2)
@@ -131,14 +132,12 @@ def main(argv):
             exit(0)
         elif o == '-d' or o == '--sample_division':
             divide = True
-            fake_divide = divide
             task_description = 'Calculating Word2Vec train values'
             task2_description = 'Calculating Word2Vec test values'
         elif o == '-i' or o == '--indent':
             indent = True
         elif o == '-v' or o == '--validation':
             divide = True
-            fake_divide = divide
             task_description = 'Calculating Word2Vec train values'
             task2_description = 'Calculating Word2Vec validation values'
             validation = True
@@ -182,6 +181,8 @@ def main(argv):
             irony_dataset = a
         elif o == '--repressed_dataset':
             repressed_dataset = a
+        elif o == '--serialize_csv':
+            serialize_csv = True
 
     if split_ratios_lenght != 0:
         if validation and split_ratios_lenght != 3:
@@ -264,8 +265,8 @@ def main(argv):
     sentences = []
 
     outputs = [None, None, None]
-    validation_or_test_outputs = [None, None]
-    test_outputs = [None, None]
+    validation_or_test_outputs = [None, None, None]
+    test_outputs = [None, None, None]
     distributions = [None, None, None]
 
     max_word_per_sentence = 0
@@ -300,11 +301,29 @@ def main(argv):
                 test_start = train_length \
                     + floor(df_length * split_ratios[1]) - 1
 
-        preprocess_index = 0
+        if serialize_csv:
 
-        # Do not divide the repressed anger dataset
-        if index == 2:
-            fake_divide = False
+            original_df = pd.read_csv(paths[index], header=0)
+
+            train_df = original_df.iloc[xrange(int(train_length)),:]
+            train_df.to_csv(path_or_buf=output_paths[index] + '_train.csv', \
+                index=False, encoding='utf-8')
+            train_df = None
+        
+            val_df = original_df.iloc[xrange(int(train_length), \
+                int(test_start) + 1)]
+            val_df.to_csv(path_or_buf=output_paths[index] \
+                + '_validation.csv', index=False, encoding='utf-8')
+            val_df = None
+
+            test_df = original_df.iloc[xrange(int(test_start) + 1, \
+                len(df.index))]
+            test_df.to_csv(path_or_buf=output_paths[index] + '_test.csv', \
+                index=False, encoding='utf-8')
+            test_df = None
+            original_df = None
+
+        preprocess_index = 0
 
         for tweet in tqdm(df.itertuples(), desc='Tweet preprocessing', \
             total=df_length):
@@ -381,7 +400,7 @@ def main(argv):
 
             sentences.append(tweet_words)
 
-            if fake_divide and preprocess_index >= train_length:
+            if divide and preprocess_index >= train_length:
                 # Split data into validation file.
                 if not validation or preprocess_index <= test_start:
                     validation_or_test_output.append({'label': label, \
@@ -390,12 +409,12 @@ def main(argv):
                     # Split data into test validation file.
                     test_output.append({'label': label, 'words': tweet_words, \
                         'id': tweet_id});
-            elif fake_divide and preprocess_index < train_length:
+            elif divide and preprocess_index < train_length:
                 # Split data into train file.
                 output.append({'label': label, 'words': tweet_words, \
                     'id': tweet_id});
 
-            elif not fake_divide:
+            elif not divide:
                 # Adds all the data to a single file, without splitting.
                 output.append({'label': label, 'words': tweet_words, \
                     'id': tweet_id});
@@ -414,9 +433,8 @@ def main(argv):
             preprocess_index += 1
 
         outputs[index] = output
-        if index != 2:
-            validation_or_test_outputs[index] = validation_or_test_output
-            test_outputs[index] = test_output
+        validation_or_test_outputs[index] = validation_or_test_output
+        test_outputs[index] = test_output
         
         distributions[index] = distribution
 
@@ -427,8 +445,6 @@ def main(argv):
     del emoticon_regex
     del stop_words
     del dfs
-
-    fake_divide = divide
 
     if force_max_phrase_length != None:
         max_word_per_sentence = force_max_phrase_length
@@ -468,9 +484,6 @@ def main(argv):
         index_padding = 0
 
         for index in xrange(len(outputs)):
-            
-            if index == 2:
-                fake_divide = False
 
             for train_index in trange(len(outputs[index]), \
                 desc=task_description, total=len(outputs[index])):
@@ -479,7 +492,7 @@ def main(argv):
                     index_padding + train_index]
 
             # Optional if statement to hide console progress bar if not needed.
-            if fake_divide:
+            if divide:
                 train_index += 1
                 for val_test_index in trange(len( \
                     validation_or_test_outputs[index]), \
@@ -502,16 +515,11 @@ def main(argv):
 
             index_padding += train_index + val_test_index + test_index + 1
 
-    fake_divide = divide
-
     serialization_start_time = datetime.now()
     if not preprocess_only:
         for index, output_path in enumerate(output_paths):
-            
-            if index == 2:
-                fake_divide = False
 
-            if fake_divide:
+            if divide:
                 if validation:
                     logger.info('Serializing JSON into train, ' \
                         + 'validation and test files.')

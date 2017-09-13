@@ -8,6 +8,7 @@ import ujson
 import os
 import pandas as pd
 import numpy as np
+from tqdm import trange, tqdm
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -92,7 +93,8 @@ def main(argv):
             model = gensim.models.Word2Vec.load_word2vec_format( \
             SCRIPT_DIR + model_rel_path, binary=True)
 
-            for index, tweet in enumerate(input1):
+            for index, tweet in tqdm(enumerate(input1), \
+                desc='Tweet comparison', total=len(input1)):
 
                 if tweet['label'] != input2[index]['label'] \
                     != input3.iloc[index]['label'] \

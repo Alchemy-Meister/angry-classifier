@@ -131,7 +131,7 @@ def main(argv):
 
     # Remove target labels (hashtags) from tweet content.
     for hastag in hashtags:
-        df[CSV_COLUMNS[3]] = df[CSV_COLUMNS[3]].str.replace(hastag, ' ', \
+        df[CSV_COLUMNS[3]] = df[CSV_COLUMNS[3]].str.replace(hastag, ' TAG', \
             case=False)
 
     # Trim tweet text if needed.

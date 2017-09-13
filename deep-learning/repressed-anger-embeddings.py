@@ -30,12 +30,14 @@ from drawing.drawing_utils import EpochDrawer, ConfusionMatrixDrawer
 
 USAGE_STRING = 'Usage: repressed-anger.py [-h] [--help] ' \
     + '[--dataset=path_to_original_dataset]' \
+    + '--dataset_distribution=path_to_dataset_dist' \
     + '[--anger_dir=path_to_anger_dir] ' \
     + '[--anger_model_weights=anger_weights_filename] ' \
     + '[--anger_distribution=anger_distribution_path]' \
     + '[--irony_dir=path_to_irony_dir] ' \
     + '[--irony_model_weights=anger_weights_filename] ' \
-    + '[--irony-distribution=irony_distribution_path]'
+    + '[--irony-distribution=irony_distribution_path]' \
+    + '--name=experiment_name'
 
 CSV_COLUMNS = ['tweet_id', 'author', 'content', 'manual_label', 'label_1', \
     'label_2']
@@ -145,10 +147,14 @@ def main(argv):
     model_length = None
     predic_distribution = None
 
+    experiment_name = None
+    explicit_word2vec = False
+
     try:
         opts, args = getopt.getopt(argv,'h',['dataset=', 'anger_dir=', \
             'anger_weights_filename=', 'anger_distribution=','irony_dir=', \
-            'irony_weights_filename=', 'irony_distribution=', 'help'])
+            'irony_weights_filename=', 'irony_distribution=', 'name=', 'help', \
+            'word2vec_file='])
     except getopt.GetoptError:
         print 'Error: Unknown parameter. %s' % USAGE_STRING
         sys.exit(2)
@@ -157,27 +163,37 @@ def main(argv):
         if o == '-h' or o == '--help':
             print USAGE_STRING
             sys.exit(0)
-        if o == '--dataset':
+        if o == '--name':
+            experiment_name = a
+        elif o == '--word2vec_file':
+            explicit_word2vec = True
+
+            word2vec_dataset_path = check_valid_path(a, 'word2vec dataset')
+            # Loads prediction dataset distribution file.
+            predic_distribution = ujson.load( open(check_valid_path( \
+                word2vec_dataset_path.split('_test.json')[0] \
+                + '_distribution.json', 'predict distribution'), 'r') )
+        elif o == '--dataset':
             dataset_path = check_valid_path(a, 'dataset')
             dataset_split_path = dataset_path.rsplit('/', 1)
             
             dataset_name = dataset_split_path[1].split('.csv')[0]
 
-            word2vec_dataset_path = check_valid_path(dataset_split_path[0] \
-                + '/json/' + dataset_name + '.json', \
-                'word2vec dataset')
+            if not explicit_word2vec:
+                word2vec_dataset_path = check_valid_path(dataset_split_path[0] \
+                    + '/json/' + dataset_name + '.json', 'word2vec dataset')
 
-            # Loads prediction dataset distribution file.
-            predic_distribution = ujson.load( open(check_valid_path( \
-                word2vec_dataset_path.split('.json')[0] \
-                + '_distribution.json', 'predict distribution'), 'r') )
+                # Loads prediction dataset distribution file.
+                predic_distribution = ujson.load( open(check_valid_path( \
+                    word2vec_dataset_path.split('.json')[0] \
+                    + '_distribution.json', 'predict distribution'), 'r') )
 
             dataset_result_output_path = os.path.join(SCRIPT_DIR, \
                 dataset_name)
             check_valid_dir(dataset_result_output_path)
 
             results_output_path = os.path.join(dataset_result_output_path, \
-                'results')
+                'results/deusto/embeddings/' + experiment_name)
 
             check_valid_dir(results_output_path)
 
@@ -186,7 +202,8 @@ def main(argv):
             classifiers[classifiers_name_str[0]][classifiers_attr_str[0]] \
                 = class_dir
             classifiers[classifiers_name_str[0]][classifiers_attr_str[1]] \
-                = os.path.join(class_dir, 'model/model.json')
+                = os.path.join(class_dir, 'model/backup_deusto/embeddings/' \
+                    + experiment_name +  '/model.json')
         elif o == '--anger_weights_filename':
             classifiers[classifiers_name_str[0]][classifiers_attr_str[2]] \
                 = a
@@ -198,7 +215,8 @@ def main(argv):
             classifiers[classifiers_name_str[1]][classifiers_attr_str[0]] \
                 = class_dir
             classifiers[classifiers_name_str[1]][classifiers_attr_str[1]] \
-                = os.path.join(class_dir, 'model/model.json')
+                = os.path.join(class_dir, 'model/backup_deusto/embeddings/' \
+                    + experiment_name +  '/model.json')
         elif o == '--irony_weights_filename':
             classifiers[classifiers_name_str[1]][classifiers_attr_str[2]] \
                 = a
@@ -289,6 +307,7 @@ def main(argv):
         # Load model weights path into the dictionary.
         classifier_dict[classifiers_attr_str[2]] = os.path.join( \
             classifier_dict[classifiers_attr_str[0]], 'model_weights/' \
+            + 'backup_deusto/embeddings/' + experiment_name + '/' \
             + classifier_dict[classifiers_attr_str[2]])
 
         model = load_model(classifier_dict[classifiers_attr_str[1]], \
