@@ -74,6 +74,7 @@ def prepare_samples(piece_path, max_phrase_length, model_length, num_instances):
     else:
         X = X.reshape(X.shape[0], max_phrase_length, model_length, 1)
         #input_shape = (img_rows, img_cols, 1)
+    X = pad_sequences(X, maxlen=max_phrase_length, padding='post')
     return X
 
 def one_hot_encoder(total_classes):
