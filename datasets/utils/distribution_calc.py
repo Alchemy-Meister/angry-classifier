@@ -52,7 +52,7 @@ def main(argv):
     df = pd.read_csv(check_valid_path(argv[0], 'csv path'), header=0)
     try:
         manual_labels = df.manual_label.unique().tolist()
-        process_labels(df, manual_label, 'manual_label', csv_name)
+        process_labels(df, manual_labels, 'manual_label', csv_name)
     except AttributeError:
         automatic_labels = df.label.unique().tolist()
         process_labels(df, automatic_labels, 'label', csv_name)

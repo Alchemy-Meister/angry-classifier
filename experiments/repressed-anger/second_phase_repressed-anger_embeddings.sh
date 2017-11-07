@@ -1,5 +1,5 @@
 python ../../deep-learning/second_phase_repressed-anger-embeddings.py \
-    --name=trainable_embeddings_double_dense_with_0.8_drop_both_batch \
+    --name=trainable_embeddings_double_dense_with_0.4_drop_relu_softmax_batch \
     --dataset=../../datasets/merged/repressed_anger_prediction_dataset_hit_reprocessed_trimmed \
     --train=../../datasets/merged/json/backup_deusto/two_phase_training/second_phase/embeddings/repressed_anger_prediction_dataset_hit_reprocessed_trimmed_train.json \
     --validation=../../datasets/merged/json/backup_deusto/two_phase_training/second_phase/embeddings/repressed_anger_prediction_dataset_hit_reprocessed_trimmed_validation.json \
@@ -9,4 +9,4 @@ python ../../deep-learning/second_phase_repressed-anger-embeddings.py \
     --anger_distribution=../../datasets/merged/json/backup_deusto/two_phase_training/first_phase/embeddings/first_phase_binary_anger_dataset_distribution.json \
     --irony_dir=../../deep-learning/first_phase_binary_irony_dataset/ \
     --irony_distribution=../../datasets/merged/json/backup_deusto/two_phase_training/first_phase/embeddings/first_phase_binary_irony_dataset_distribution.json \
-    --all_experiments --freeze_branches --trim_denses
+    --freeze_branches --trim_denses --use_class_weight --custom_optimizer --experimental

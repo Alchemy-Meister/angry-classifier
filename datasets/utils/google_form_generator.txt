@@ -1,0 +1,53 @@
+function myFunction(){
+  var ss = SpreadsheetApp.openByUrl(
+     'https://docs.google.com/spreadsheets//d/1Q46YsudZowHEkMDex_hz0ZY_xRnHUxK9zNhX9ojdPXc/edit');
+  var assSheet1 = ss.getSheetByName('repressed_anger_prediction_dataset_no_hashtags.csv');
+  var assValues = assSheet1.getDataRange().getValues()
+  
+  questions = []
+  labels = []
+    
+  for(var p = 0; p < assValues.length; p++) {
+    questions.push(assValues[p][3]);
+    labels.push(assValues[p][1]);
+  }
+  
+  questions.shift();
+  labels.shift();
+  
+  var index_start_value = 100;
+  var index = index_start_value;
+  var form = null;
+  var part_index = 1;
+  var split_size = index_start_value;
+  
+  for(var p = 100; p < questions.length; p++) {
+    if(index >= split_size) {
+      index = 0;
+      form = FormApp.create('2nd Phase of Repressed Anger Detection research (Part ' + part_index  +'): 0/5 responses')
+      part_index += 1;
+    }
+    form.addSectionHeaderItem().setTitle(questions[p]);
+    var item = form.addMultipleChoiceItem();
+    item.setTitle('Classify this sentence as:').setChoices([
+      item.createChoice('Explicit anger'),
+      item.createChoice('Repressed anger'),
+      item.createChoice('Normal'),
+      item.createChoice('Irony'),
+      item.createChoice('I don\'t know')
+    ]).setRequired(true).setHelpText("Explicit Anger is considered to all the messages that contain any form of direct rage, irritation, indignation, etc.\nIrony is considered in this research as any form of cynicism, mockery, satire, etc, that DOES NOT contain any ANGER.\nRepressed anger is considered to all the messages that contain any form or Irony BUT also contains ANGER.\nNormal is considered when the message does not include irony nor anger.");
+    
+    if(labels[p].equals('irony')) {
+      var item = form.addMultipleChoiceItem();
+      item.setTitle('Does this sentence contains irony?:').setChoices([
+      item.createChoice('Yes'),
+      item.createChoice('No'),
+      ]).setRequired(true).setHelpText('This sentence has been obtained from a process that downloaded phrases that contain the hashtag #irony or #sarcasm, but cannot automatically check if, indeed, this sentence contains irony or not.');
+    }
+      
+    if(index < split_size - 1) {
+      form.addPageBreakItem();
+    }
+    index += 1;
+  }
+}

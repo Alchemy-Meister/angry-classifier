@@ -1,0 +1,3 @@
+python csv_result_generator.py \
+	--dataset=../../deep-learning/repressed_anger_prediction_dataset_hit_reprocessed_trimmed \
+	--subexperiments=direct_denses_trimmed_class_weights,direct_freezed_denses_trimmed_class_weights,no_pretraining_denses_trimmed_class_weights

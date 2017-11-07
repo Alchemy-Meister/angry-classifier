@@ -10,22 +10,49 @@ class EpochDrawer(object):
     takes the history of keras.models.Sequential().fit() and
     plots training and validation loss over the epochs
     '''
-    def __init__(self, history, save_filename = None):
+    def __init__(self, history, save_filename = None, class_to_train="", val_to_monitor=""):
+        #loss_comparison.png
+
+        ##### LOSS #####
         self.x = history.epoch
         self.legend = ['loss']
         plt.plot(self.x, history.history['loss'], marker='.')
         if 'val_loss' in history.history:
             self.legend.append('val loss')
-            plt.plot(self.x, history.history['val_loss'], marker='.')
+            plt.plot(self.x, history.history['val' + val_to_monitor + '_loss'], marker='.')
         plt.title('Loss over epochs')
         plt.xlabel('Epochs')
         plt.xticks(history.epoch, history.epoch)
         #plt.xticks(np.arange(min(x), max(x)+1, 1.0))
         plt.legend(self.legend, loc = 'upper right')
         if save_filename is not None:
-            plt.savefig(save_filename)
-        #plt.show()
-        ptl.clf()
+            plt.savefig(save_filename + "loss_comparison_" + class_to_train +".png")
+        plt.clf()
+        ##### ACC #####
+        self.legend = ['acc']
+        plt.plot(self.x, history.history['acc'], marker='.')
+        if 'val' + val_to_monitor + '_acc' in history.history:
+            self.legend.append('val' + val_to_monitor + '_acc')
+            plt.plot(self.x, history.history['val' + val_to_monitor + '_acc'], marker='.')
+        plt.title('Acc over epochs')
+        plt.xlabel('Epochs')
+        plt.xticks(history.epoch, history.epoch)
+        plt.legend(self.legend, loc = 'upper right')
+        if save_filename is not None:
+            plt.savefig(save_filename + "acc_comparison_" + class_to_train +".png")
+        plt.clf()
+        #ERRORS
+        """self.legend = ['mse']
+        plt.plot(self.x, history.history['mean_squared_error'], marker='.')
+        self.legend.append('mae')
+        plt.plot(self.x, history.history['mean_absolute_error'], marker='.')
+        plt.title('Errors over epochs')
+        plt.xlabel('Epochs')
+        plt.xticks(history.epoch, history.epoch)
+        plt.legend(self.legend, loc = 'upper right')
+        if save_filename is not None:
+            plt.savefig(save_filename + "err_commparison_" + class_to_train +".png")
+        plt.clf()"""
 
 
 class ConfusionMatrixDrawer(object):

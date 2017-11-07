@@ -1,0 +1,9 @@
+{
+    "acc":0.5634920635,
+    "recall_macro":0.2705560485,
+    "precision_macro":0.2685185185,
+    "f1_macro":0.242305422,
+    "precision_micro":0.5634920635,
+    "recall_micro":0.5634920635,
+    "f1_micro":0.5634920635
+}

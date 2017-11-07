@@ -12,6 +12,8 @@ from keras.preprocessing.sequence import pad_sequences
 from keras.utils.np_utils import to_categorical, probas_to_classes
 from sklearn.metrics import confusion_matrix, accuracy_score, f1_score, \
     precision_score, recall_score
+from sklearn.utils import class_weight
+from keras.optimizers import Adam
 
 import codecs
 import time, os, gc, sys
@@ -44,7 +46,10 @@ USAGE_STRING = 'Usage: repressed-anger.py [-h] [--help] ' \
     + '[--irony-distribution=irony_distribution_path]' \
     + '--name=experiment_name -a --all_experiments' \
     + '-n --no_pretraining -f --freeze_branches' \
-    + '-s --summary_only -t --trim_denses -c --clean_result_dir' 
+    + '-s --summary_only -t --trim_denses -c --clean_result_dir' \
+    + '-w --use_class_weight' \
+    + '-x --experimental' \
+    + '-o --custom_optimizer'
 
 CSV_COLUMNS = ['tweet_id', 'author', 'content', 'manual_label', 'label_1', \
     'label_2']
@@ -62,6 +67,9 @@ WEIGHT_FREESE = True
 AGGREGATED_DENSE = True
 AGGREGATED_DROPOUT = 0.4
 NUM_EXECUTIONS = 25
+ 
+LEARNING_RATE = 0.00001
+DECAY = 0.0005
 
 def json_numpy_obj_hook(dct):
     """Decodes a previously encoded numpy ndarray with proper shape and dtype.
@@ -74,22 +82,24 @@ def json_numpy_obj_hook(dct):
         return np.frombuffer(data, dct['dtype']).reshape(dct['shape'])
     return dct
 
-def prepare_samples(piece_path, labels, max_phrase_length, df):
+def prepare_samples(piece_path, classes, max_phrase_length, df):
     X = []
     y = []
+    dataset_labels = []
 
     with open(piece_path, 'r') as piece:
         program = json.load(piece, object_hook=json_numpy_obj_hook)
 
-        encoder = one_hot_encoder(labels)
+        encoder = one_hot_encoder(classes)
 
         for indx, phrase in enumerate(program):
             X.append(np.array(phrase['words']))    
-            y.append(encoder[df.get_value(indx, 'manual_label')])            
+            y.append(encoder[df.get_value(indx, 'manual_label')])
+            dataset_labels.append(df.get_value(indx, 'manual_label'))
 
     X = np.array(X)
     X = pad_sequences(X, maxlen=max_phrase_length, padding='post')
-    return X, y
+    return X, y, dataset_labels
 
 def one_hot_encoder(total_classes):
     encoder = {}
@@ -122,6 +132,7 @@ def load_model(model_path, weights_path, load_pretrain_weights):
     print 'Load weights: %s' % load_pretrain_weights
     if load_pretrain_weights:
         model.load_weights(weights_path)
+
     model.compile(loss='binary_crossentropy', optimizer='adam', \
         metrics=['accuracy', 'mse', 'mae'])
 
@@ -198,7 +209,6 @@ def remove_layers(model, number):
 def remove_denses(model):
     merge_layer_index = 1
     for layer in reversed(model.layers):
-        print layer
         if type(layer) is Merge:
             break
         merge_layer_index += 1
@@ -206,13 +216,20 @@ def remove_denses(model):
     merge_layer_index -= 1
     return remove_layers(model, merge_layer_index)
 
-def train(train_path, validation_path, model, labels, max_phrase_length, \
-    model_output_path, model_weights_output_path, dfs):
+def train(train_path, validation_path, model, classes, max_phrase_length, \
+    model_output_path, model_weights_output_path, dfs, use_class_weight, \
+    experiment_results_output_path):
     
-    X_train, y_train = prepare_samples(train_path, labels, max_phrase_length, \
-        dfs[0])
-    X_validation, y_validation = prepare_samples(validation_path, labels, \
-        max_phrase_length, dfs[1])
+    X_train, y_train, df_classes = prepare_samples(train_path, classes, \
+        max_phrase_length, dfs[0])
+
+    class_weight_values = None
+    if use_class_weight:
+       class_weight_values = class_weight.compute_class_weight('balanced', \
+        classes, df_classes)
+
+    X_validation, y_validation, useless_var = prepare_samples(validation_path, \
+        classes, max_phrase_length, dfs[1])
 
     early_stopping = EarlyStopping(monitor=STOP_CONDITION, \
         min_delta=0, patience=PATIENCE, verbose=0, mode='auto')
@@ -224,9 +241,15 @@ def train(train_path, validation_path, model, labels, max_phrase_length, \
     print 'Training...'
     sys.stdout.flush()
 
-    model.fit([X_train, X_train], y_train, batch_size=BATCH_SIZE, \
+    train_history = model.fit([X_train, X_train], y_train, \
+        batch_size=BATCH_SIZE, class_weight=class_weight_values, \
         nb_epoch=NB_EPOCH, validation_data=([X_validation, X_validation], \
-            y_validation), callbacks=[checkpoint, early_stopping])
+            y_validation), \
+        callbacks=[checkpoint, early_stopping])
+
+    check_valid_dir(experiment_results_output_path + '/epoch_plot/')
+    EpochDrawer(train_history, save_filename=experiment_results_output_path \
+        + '/epoch_plot/')
 
     print 'Saving model...'
     sys.stdout.flush()
@@ -234,11 +257,11 @@ def train(train_path, validation_path, model, labels, max_phrase_length, \
     save_model(model, model_output_path, model_weights_output_path)
     print 'LLAP'
 
-def test(test_path, model, labels, max_phrase_length, output_path, dfs):
+def test(test_path, model, classes, max_phrase_length, output_path, dfs):
     # Using keras evaluation method,
     # just check if I am doing it right with SciKit.
-    X_test, y_test = prepare_samples(test_path, labels, max_phrase_length, \
-        dfs[2])
+    X_test, y_test, useless_var = prepare_samples(test_path, classes, \
+        max_phrase_length, dfs[2])
 
     y_predict = model.evaluate([X_test, X_test], y_test, verbose=0, \
         batch_size=BATCH_SIZE)
@@ -260,9 +283,9 @@ def test(test_path, model, labels, max_phrase_length, output_path, dfs):
 
     #Y_true, y_predict
     conf_matrix = confusion_matrix(y_raw_test, y_predict)
-    ConfusionMatrixDrawer(conf_matrix, classes=labels, str_id=timestamp, \
+    ConfusionMatrixDrawer(conf_matrix, classes=classes, str_id=timestamp, \
         title='Confusion matrix, without normalization', folder=output_path)
-    ConfusionMatrixDrawer(conf_matrix, classes=labels, normalize=True, \
+    ConfusionMatrixDrawer(conf_matrix, classes=classes, normalize=True, \
         title='Normalized confusion matrix', folder=output_path, \
         str_id=timestamp)
 
@@ -317,8 +340,10 @@ def main(argv):
     load_pretrain_weights = True
     freeze_branches = False
     trim_denses = False
+    use_class_weight = False
     summary_only = False
     clean_result_dir = False
+    use_custom_adam = False
 
     result_col = 'classification'
     classifiers_name_str = ['anger', 'irony']
@@ -347,12 +372,13 @@ def main(argv):
     subexperiment_name = 'direct'
 
     try:
-        opts, args = getopt.getopt(argv,'acfhnst',['dataset=', 'train=', \
+        opts, args = getopt.getopt(argv,'acfhnostwx',['dataset=', 'train=', \
             'validation=', 'test=', 'target=','anger_dir=', \
             'anger_distribution=','irony_dir=', 'irony_distribution=', \
             'all_experiments', 'name=', 'help', 'distribution=', \
             'no_pretraining', 'freeze_branches', 'summary_only', \
-            'trim_denses', 'clean_result_dir'])
+            'trim_denses', 'clean_result_dir', 'use_class_weight', \
+            'experimental', 'custom_optimizer'])
     except getopt.GetoptError:
         print 'Error: Unknown parameter. %s' % USAGE_STRING
         sys.exit(2)
@@ -425,6 +451,17 @@ def main(argv):
             subexperiment_name = subexperiment_name + '_denses_trimmed'
         elif o == '--clean_result_dir' or o == '-c':
             clean_result_dir = True
+        elif o == '--use_class_weight' or o == '-w':
+            use_class_weight = True
+            subexperiment_name = subexperiment_name + '_class_weights'
+        elif o == '--experimental' or o == '-x':
+            subexperiment_name = subexperiment_name + '_experimental'
+        elif o == '--custom_optimizer' or o == '-o':
+            subexperiment_name = subexperiment_name + '_adam_lr_' \
+            + str(LEARNING_RATE) + '_dec_' + str(DECAY)
+            use_custom_adam = True
+
+
 
     print 'experiment name: %s' % subexperiment_name
 
@@ -575,8 +612,13 @@ def main(argv):
         aggregated_model = Model( input=[x.input for x in models], \
             output=[agregated] )
 
-        aggregated_model.compile( loss='categorical_crossentropy', \
-            optimizer='adam', metrics=['accuracy', 'mse', 'mae'] )
+        if use_custom_adam:
+            custom_adam = Adam(lr=LEARNING_RATE, decay=DECAY)
+            aggregated_model.compile( loss='categorical_crossentropy', \
+                optimizer=custom_adam, metrics=['accuracy', 'mse', 'mae'] )
+        else:
+            aggregated_model.compile( loss='categorical_crossentropy', \
+                optimizer='adam', metrics=['accuracy', 'mse', 'mae'] )
 
         aggregated_model.summary()
 
@@ -604,7 +646,8 @@ def main(argv):
                 if target == TARGETS[0] or target == TARGETS[2]:
                     train(train_path, validation_path, aggregated_model, \
                         labels, max_phrase_length, experiment_model_output, \
-                        experiment_model_weights_output, dfs)
+                        experiment_model_weights_output, dfs, \
+                        use_class_weight, experiment_results_output_path)
 
                 # Execute test if target is test or all.
                 if target == TARGETS[1] or target == TARGETS[2]:

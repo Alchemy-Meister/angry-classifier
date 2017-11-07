@@ -1,1 +1,11 @@
 python distribution_calc.py ../merged/first_phase_binary_anger_dataset_train.csv
+python distribution_calc.py ../merged/first_phase_binary_anger_dataset_validation.csv
+python distribution_calc.py ../merged/first_phase_binary_anger_dataset_test.csv
+
+python distribution_calc.py ../merged/first_phase_binary_irony_dataset_train.csv
+python distribution_calc.py ../merged/first_phase_binary_irony_dataset_validation.csv
+python distribution_calc.py ../merged/first_phase_binary_irony_dataset_test.csv
+
+python distribution_calc.py ../merged/repressed_anger_prediction_dataset_hit_reprocessed_trimmed_train.csv
+python distribution_calc.py ../merged/repressed_anger_prediction_dataset_hit_reprocessed_trimmed_validation.csv
+python distribution_calc.py ../merged/repressed_anger_prediction_dataset_hit_reprocessed_trimmed_test.csv
